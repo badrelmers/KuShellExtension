@@ -1,0 +1,142 @@
+#pragma once
+
+class CKuMenuSet
+{
+	friend class CMenuItem;
+
+	class CMenuItem
+	{
+		friend class CKuMenuSet;
+
+		enum ACTION {
+			ACT_EXECUTE,
+			ACT_BULITIN
+		};
+
+		enum CMD_ID {
+			CMD_ID_NULL,
+			CMD_ID_DROP_SYMLINKS,
+			CMD_ID_DROP_JUNCTIONS,
+			CMD_ID_DROP_HARDLINKS
+		};
+
+		static CMD_ID GetCmdId(LPCTSTR sCmd);
+
+		explicit CMenuItem(CKuMenuSet *pKuMenuSet)
+			: m_pParent(NULL), m_pPrevSibling(NULL), m_pNextSibling(NULL), m_pFirstChild(NULL),
+			m_eAction(ACT_EXECUTE), m_hIcon(NULL), m_dwMultiItems(1), m_bConsole(true), m_pKuMenuSet(pKuMenuSet), m_hBitmap(NULL)
+		{ ASSERT(m_pKuMenuSet); }
+		virtual ~CMenuItem()
+		{
+			if (m_pNextSibling)
+				delete m_pNextSibling;
+			if (m_pFirstChild)
+				delete m_pFirstChild;
+			if (m_hIcon)
+				DestroyIcon(m_hIcon);
+			if (m_hBitmap)
+				DeleteObject(m_hBitmap);
+		}
+
+		bool IsSubMenu() { return m_pFirstChild != NULL; }
+		bool IsSeparator() { return !m_sName.Compare(_T("----")); }
+		bool IsOurPath(LPCTSTR sPath);
+		bool ShouldShown();
+
+		void QueryContextMenu(HMENU hMenu, UINT &indexMenu, UINT &idCmdFirst, UINT idCmdLast, UINT uFlags);
+		bool InvokeCommand();
+		CMenuItem *GetLastChild() const
+		{ return m_pFirstChild ? (m_pFirstChild->m_pPrevSibling ? m_pFirstChild->m_pPrevSibling : m_pFirstChild) : NULL; }
+		CMenuItem *GetFirstSibling() const
+		{ return m_pParent ? m_pParent->m_pFirstChild : m_pKuMenuSet->m_pFirstItem; }
+		CMenuItem *GetLastSibling() const
+		{ return m_pParent ? m_pParent->GetLastChild() : m_pKuMenuSet->GetLastItem(); }
+		bool IsFirst() const
+		{ return GetFirstSibling() == this; }
+		bool IsLast() const
+		{ return GetLastSibling() == this; }
+
+		static LPCTSTR ExpandFileName(LPCTSTR sName, LPCTSTR sFlags, CString &sDest);
+		static DWORD WINAPI ShellExecuteThread(LPVOID lpParameter);
+
+		enum {
+			DROP_SYMBOLIC = 0x00000000,
+			DROP_JUNCTION = 0x00000001,
+			DROP_HARDLINK = 0x00000002,
+			DROP_ABSOLUTE = 0x00000010,
+		};
+		static bool DropLinks(LPCTSTR sDir, LPCTSTR sPath, DWORD uFlags);
+
+		CKuMenuSet *m_pKuMenuSet;
+		CMenuItem *m_pParent;
+		CMenuItem *m_pPrevSibling;
+		CMenuItem *m_pNextSibling;
+		CMenuItem *m_pFirstChild;
+		CString m_sName;
+		CString m_sClasses;
+		ACTION m_eAction;
+		CString m_sAction;
+		CString m_sWorkingDir;
+		HICON m_hIcon;
+		HBITMAP m_hBitmap;
+		DWORD m_dwMultiItems;
+		bool m_bConsole;
+		CAtlMap<CString, CString> m_vars;
+
+		class CShellExecuteThread
+		{
+		public:
+			CShellExecuteThread() : m_bConsole(true) {}
+			virtual ~CShellExecuteThread()
+			{
+				if (!m_sTempFile.IsEmpty())
+					DeleteFile(m_sTempFile);
+			}
+
+			CAtlArray<CString> m_aCmds;
+			CString m_sTempFile;
+			CString m_sWorkingDir;
+			bool m_bConsole;
+		};
+	};
+public:
+	CKuMenuSet();
+	virtual ~CKuMenuSet();
+
+	bool FromFile(LPCTSTR sPath);
+	bool FromFile(HANDLE hFile);
+	bool FromRaw(const BYTE *pXML, DWORD uLen);
+	bool FromString(LPCTSTR sXML);
+
+	bool IsEmpty() const
+	{ return m_pFirstItem == NULL; }
+
+	LPCTSTR Substitute(LPCTSTR src, CString &dest, CMenuItem *pItem = NULL);
+	bool GetVariable(LPCTSTR key, CString &value, CMenuItem *pItem = NULL);
+	bool GetOurVariable(LPCTSTR key, CString &value, CMenuItem *pItem = NULL);
+
+	HRESULT QueryContextMenu(HMENU hMenu, UINT indexMenu, UINT idCmdFirst, UINT idCmdLast, UINT uFlags);
+	bool InvokeCommand(UINT id)
+	{ CMenuItem *pItem; if (m_cmd.Lookup(id, pItem)) return pItem->InvokeCommand(); return false; }
+
+	HICON GetMenuIcon(UINT id)
+	{ CMenuItem *pItem; if (m_cmd.Lookup(id, pItem)) return pItem->m_hIcon; return NULL; }
+
+	static UINT DetectCodePage(const BYTE *pBuffer, DWORD uLen);
+	static bool IsNumber(LPCTSTR str);
+	static void InitBuiltinVars();
+
+	bool m_bFromFolderBk;
+	CAtlArray<CString> m_aFiles;
+private:
+	CMenuItem *GetLastItem()
+	{ return m_pFirstItem ? (m_pFirstItem->m_pPrevSibling ? m_pFirstItem->m_pPrevSibling : m_pFirstItem) : NULL; }
+
+	CMenuItem *m_pFirstItem;
+
+	CAtlMap<CString, CString> m_vars;
+	static CAtlMap<CString, CString> m_BuiltinVars;
+	CAtlMap<UINT, CMenuItem *> m_cmd;
+
+	void PraseMenuItems(pug::xml_node &node, CMenuItem *pItem);
+};

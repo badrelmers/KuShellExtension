@@ -1,0 +1,196 @@
+<?xml version="1.0" encoding="utf-8"?>
+<config version="1">
+	<!--
+		設定變數值:
+			<var name="變數名稱">變數值</var>
+		取得自訂變數值:
+			${var:變數名稱}
+		取得環境變數值:
+			${env:環境變數名稱}
+		取得自訂或環境變數值:
+			${變數名稱|環境變數名稱}
+
+		備註: 自訂變數和內建變數名稱會分辨大小寫，環境變數則否
+
+		內建變數:
+			CONFIG: 設定檔路徑
+			Arch: 系統架構、"32"或"64" (位元，根據作業系統架構而非硬體架構)
+			ArchName: "x86"或"x64"
+			SysDir:
+				"C:\Windows\System32" (Windows 32bits, 以下簡稱 Win32)
+				"C:\Windows\SysWOW64" (Windows 64bits, KuShellExtension 32bits, 以下簡稱WOW64)
+				"C:\Windows\System32" (Windows 64bits, KuShellExtension 64bits, 以下簡稱Win64)
+			SysDir32:
+				"C:\Windows\System32" (Win32)
+				"C:\Windows\SysWOW64" (WOW64 及 Win64)
+			SysDir64:
+				"C:\Windows\System32" (Win32, WOW64, Win64)
+			ProgramFiles:
+				"C:\Program Files" (Win32)
+				"C:\Program Files (x86)" (WOW64)
+				"C:\Program Files" (Win64)
+			ProgramFiles32:
+				"C:\Program Files" (Win32)
+				"C:\Program Files (x86)" (WOW64 及 Win64)
+			ProgramFiles64:
+				"C:\Program Files" (Win32, WOW64, Win64)
+			Documents: 我的文件夾
+			CommonDocuments: 共用文件夾
+			Pictures: 我的圖片
+			CommonPictures: 共用圖片
+			Music: 我的音樂
+			CommonMusic: 共用音樂
+			Video: 我的影片
+			CommonPictures: 共用影片
+			Desktop: 桌面
+			CommonMusic: 桌面 (所有使用者)
+			Startup: 啟動
+			CommonStartup: 啟動 (所有使用者)
+	-->
+	<var name="7zDir">${var:ProgramFiles64}\7-Zip</var>
+	<var name="7zG">${var:7zDir}\7zG.exe</var>
+	<var name="7zFM">${var:7zDir}\7zFM.exe</var>
+	<var name="UniExtract">${var:ProgramFiles}\UniExtract\UniExtract.exe</var>
+	<var name="upx">${var:ProgramFiles}\upx\upx</var>
+	<var name="WinRAR">${var:ProgramFiles32}\WinRAR\WinRAR.exe</var>
+	<var name="AppLoc">${env:windir}\AppPatch\AppLoc.exe</var>
+	<var name="AlcoholDir">${var:ProgramFiles32}\Alcohol Soft\Alcohol 52</var>
+	<var name="AxCmd">${var:AlcoholDir}\AxCmd.exe</var>
+	<var name="Alcohol">${var:AlcoholDir}\Alcohol.exe</var>
+
+	<var name="archive">.7z .zip .rar .cab .tar .ace</var>
+	<var name="video">.mpg .avi .wmv .rm .rmvb .mkv .mp4 .flv</var>
+	<var name="audio">.mp2 .mp3 .mpc .wma .ra .mka .ape .ogg .flac .tta .tak .wv</var>
+	<var name="image">.bmp .gif .jpg .jpe .jpeg .png .tga .tif .tiff</var>
+	<var name="exe">.exe .com .cmd .bat</var>
+	<var name="dll">.dll .ax .acm .vcm</var>
+	<var name="iso">.mds .mdf .ccd .img .cue .bin .iso .bwt .cdi .nrg .pdi .b5t .isz</var>
+
+	<!--
+		<menu name="子選單名稱" (預試值: 無)
+			class="要顯示的檔案類型" (預試值: 無)
+			icon="圖示檔" (預試值: 無)>
+			<menuitem name="項目名稱" (預試值: 無)
+				class="要顯示的檔案類型" (預試值: *)
+				icon="圖示檔" (預試值: 被執行程式的圖示)
+				action="execute|builtin" (execute: 執行一般指令. builtin:執行內建指令. 預試值: execute)
+				console="true|false" (!!命令列程式限定!! true: 顯示命令提示字元視窗. false: 不顯示命令提示字元視窗. 預試值: true)
+				multiple="N" (當使用者選擇N個檔案時顯示. N = 0則無限制. 預試值: 根據動作內容自動判斷)
+				>
+				要執行的動作(請看下面的詳細說明)
+			</menuitem>
+		</menu>
+
+		要建立分隔線可用 "----" (4個減號) 當項目名稱:
+			<menuitem name="----" />
+
+		"class=":
+			.???			附檔名
+			*				所有檔案(不包含資料夾)
+			folder			資料夾
+
+		"icon=": 檔名[,序列數]
+			"C:\Windows\System32\shell32.dll,2" = shell32.dll 內的第三個圖示(由 0 開始算起是第一個)
+
+		動作內容設定:
+			%變數:
+				%1 %2 %3 ... %9 = 被選取的第一個到第九個檔案
+				%w = 工作目錄
+				%z = 最適合拿來當封包名稱
+				%* = 選取的所有檔案
+				%@ = 同上，不過會被分開執行，例如選取了十個檔案，那該指令就會被執行十次
+				%u[數字] = 產生一個暫存清單檔案(UTF-8)，數字代表要略過幾個檔案，例如WinRAR需要略過第一個檔案
+				%L[數字] = 產生一個暫存清單檔案(UTF-16)
+				%l[數字] = 產生一個暫存清單檔案(系統預設編碼)
+				%c[數字] = 剪貼簿裡面的檔案，數字代表第幾個檔案，例如%c0代表剪貼簿裡面的第一個檔案
+				%% = '%'字元
+
+				%變數可用一些參數修飾，格式是 %~[參數]變數，如 %~dp1 可修飾 %1
+				有以下參數可使用:
+					d = 磁碟代號
+					p = 目錄(不含磁碟代號)
+					n = 檔名(不含附檔名)
+					x = 附檔名
+					s = 短檔名(只在該檔名含有非系統編碼的Unicode字元時生效)，適合用在不支援Unicode檔名的程式
+
+					Ex. %1 = "C:\path\to\the\file.txt"
+						%~d1 = "C:"
+						%~p1 = "\path\to\the\"
+						%~dp1 = "C:\path\to\the\"
+						%~nx1 = "file.txt"
+						%~dpn1 = "C:\path\to\the\file"
+
+			因為有些檔名可能會包含空白字元，所以需要用引號( " )刮起來，但xml裡面引號是特殊字元，
+			所以必須用 &quot; 代替，不過你不需要為 %@ %* 加上引號，KuShellExtension會自動加上
+
+			內建指令:
+				DropSymLinks [0|1]:
+					Vista以上限定，產生symbolic links，來源是剪貼簿裡面的檔案，傳入參數 0 代表用相對路徑，參數 1 代表則是絕對路徑
+				DropJunctions:
+					產生 junctions，來源是剪貼簿裡面的目錄
+				DropHardLinks
+					產生 hard links，來源是剪貼簿裡面的檔案
+	-->
+	<menu name="AppLocale" icon="${var:AppLoc}">
+		<menuitem name="日本語" class="${var:exe}">&quot;${var:AppLoc}&quot; &quot;%1&quot; /L0411</menuitem>
+		<menuitem name="正體中文" class="${var:exe}">&quot;${var:AppLoc}&quot; &quot;%1&quot; /L0404</menuitem>
+		<menuitem name="简体中文" class="${var:exe}">&quot;${var:AppLoc}&quot; &quot;%1&quot; /L0804</menuitem>
+		<menuitem name="7-Zip (日本語)" class="${var:archive}" icon="${var:7zFM}">&quot;${var:AppLoc}&quot; &quot;${var:7zFM}&quot; &quot;\&quot;%1\&quot;&quot; /L0411</menuitem>
+		<menuitem name="7-Zip (正體中文)" class="${var:archive}" icon="${var:7zFM}">&quot;${var:AppLoc}&quot; &quot;${var:7zFM}&quot; &quot;\&quot;%1\&quot;&quot; /L0404</menuitem>
+		<menuitem name="7-Zip (简体中文)" class="${var:archive}" icon="${var:7zFM}">&quot;${var:AppLoc}&quot; &quot;${var:7zFM}&quot; &quot;\&quot;%1\&quot;&quot; /L0804</menuitem>
+	</menu>
+	<menu name="掛載映像檔" class="${var:iso}" icon="${var:Alcohol}">
+		<!--
+			for ... in 迴圈
+			<for 變數1="變數值清單1" 變數2="變數值清單2" ...>...</for>
+			下面的這實際例子會產生掛載映像檔到H: I: J: K:的選單項目
+		-->
+		<for disk="H I J K">
+			<menuitem name="${var:disk}:" icon="${var:CDDriveIcon}">&quot;${var:AxCmd}&quot; ${var:disk}: /M:&quot;%1&quot;</menuitem>
+		</for>
+	</menu>
+	<menuitem name="----" class="* folder" />
+	<menu name="&amp;7-Zip" icon="${var:7zFM}">
+		<menuitem name="解壓縮到 *\">${var:7zG} x -o&quot;%w\*&quot; -an -ai&quot;@%u&quot;</menuitem>
+		<menuitem name="解壓縮至此">${var:7zG} x -o&quot;%w&quot; -an -ai&quot;@%u&quot;</menuitem>
+		<menuitem name="解壓縮到...">${var:7zG} x -o&quot;%~dpn1&quot; -ad -an -ai&quot;@%u&quot;</menuitem>
+		<menuitem name="加到壓縮檔..." class="* folder">${var:7zG} a -i&quot;@%u&quot; -ad -- &quot;%z&quot;</menuitem>
+		<menuitem name="加到 .7z 壓縮檔" class="* folder">${var:7zG} a -i&quot;@%u&quot; -t7z -- &quot;%z.7z&quot;</menuitem>
+		<menuitem name="加到 .zip 壓縮檔" class="* folder">${var:7zG} a -i&quot;@%u&quot; -tzip -- &quot;%z.zip&quot;</menuitem>
+		<menuitem name="測試壓縮檔">${var:7zG} t -an -ai&quot;@%u&quot;</menuitem>
+		<menuitem name="開啟壓縮檔">${var:7zFM} &quot;%1&quot;</menuitem>
+	</menu>
+	<menu name="WinRAR" icon="${var:WinRAR}">
+		<menuitem name="解壓縮到 *\">&quot;${var:WinRAR}&quot; x -iext -ow -ver -anf=&quot;%L1&quot; -scul -ad -- &quot;%1&quot; &quot;%w&quot;</menuitem>
+		<menuitem name="解壓縮至此">&quot;${var:WinRAR}&quot; x -iext -ow -ver -anf=&quot;%L1&quot; -scul -- &quot;%1&quot; &quot;%w&quot;</menuitem>
+		<menuitem name="解壓縮到...">&quot;${var:WinRAR}&quot; x -iext -ow -ver -anf=&quot;%L1&quot; -scul -- &quot;%1&quot; &quot;?\&quot;</menuitem>
+		<menuitem name="加到壓縮檔..." class="* folder">&quot;${var:WinRAR}&quot; a -ep1 -scul -r0 -iext -- . &quot;@%L&quot;</menuitem>
+		<menuitem name="加到 .rar 壓縮檔" class="* folder">&quot;${var:WinRAR}&quot; a -ep1 -scul -r0 -iext -- &quot;%z.rar&quot; &quot;@%L&quot;</menuitem>
+		<menuitem name="測試壓縮檔">&quot;${var:WinRAR}&quot; t -iext -anf=&quot;%L1&quot; -scul -- &quot;%1&quot;</menuitem>
+		<menuitem name="修復壓縮檔">&quot;${var:WinRAR}&quot; r -iext -anf=&quot;%L1&quot; -scul -- &quot;%1&quot; &quot;%w&quot;</menuitem>
+		<menuitem name="開啟壓縮檔">&quot;${var:WinRAR}&quot; &quot;%1&quot;</menuitem>
+	</menu>
+	<menu name="UniExtract" icon="${var:UniExtract}">
+		<menuitem name="解壓縮到 *\">${var:UniExtract} %@ /sub</menuitem>
+		<menuitem name="解壓縮至此">${var:UniExtract} %@ %~dp@</menuitem>
+		<menuitem name="開啟壓縮檔">${var:UniExtract} &quot;%1&quot;</menuitem>
+	</menu>
+	<menu name="UPX">
+		<menuitem name="壓縮" class=".exe ${var:dll}">${var:upx}.exe --lzma -9 %*</menuitem>
+		<menuitem name="解壓縮" class=".exe ${var:dll}">${var:upx}.exe -d %*</menuitem>
+	</menu>
+	<menuitem name="----" class="* folder" />
+	<menu name="RegSvr32" class="${var:dll}">
+		<menuitem name="註冊">regsvr32.exe /s %@</menuitem>
+		<menuitem name="解除">regsvr32.exe /s /u %@</menuitem>
+	</menu>
+	<menuitem name="命令提示字元">${env:comspec} /k &quot;cd /d &quot;%1&quot;&quot;</menuitem>
+	<menu name="建立連結..." class="folder">
+		<menuitem name="符號連結(相對路徑)" action="builtin">DropSymLinks 0</menuitem>
+		<menuitem name="符號連結(絕對路徑)" action="builtin">DropSymLinks 1</menuitem>
+		<menuitem name="實體連結" action="builtin">DropHardLinks</menuitem>
+		<menuitem name="交叉點" action="builtin">DropJunctions</menuitem>
+	</menu>
+	<menuitem name="----" class="* folder" />
+	<menuitem name="編輯設定" class="* folder" multiple="true">notepad.exe &quot;${var:CONFIG}&quot;</menuitem>
+</config>
