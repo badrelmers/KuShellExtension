@@ -1,52 +1,53 @@
 <?xml version="1.0" encoding="utf-8"?>
 <config version="1">
-	<!--
-		設定變數值:
-			<var name="變數名稱">變數值</var>
-		取得自訂變數值:
-			${var:變數名稱}
-		取得環境變數值:
-			${env:環境變數名稱}
-		取得自訂或環境變數值:
-			${變數名稱|環境變數名稱}
+<!--
+VARIABLES
+    KuShellExtension allows users defines some variables to simplify the configuration, which will be substituted in attributes and text nodes of XML elements *after* it is defined in the configuration file.
+    The names of user defined and built-in variables are case-sensitive, but environment variables are case-insensitive. All variables are static-binding, which means it only be expanded when KuShellExtension parses this file.
+    KuShellExtension re-parses configuration whenever the configuration file is changed.
 
-		備註: 自訂變數和內建變數名稱會分辨大小寫，環境變數則否
+    <var name="NAME">VALUE</var>
+        Define a variable named NAME and the value of it is VALUE.
 
-		內建變數:
-			CONFIG: 設定檔路徑
-			Arch: 系統架構、"32"或"64" (位元，根據作業系統架構而非硬體架構)
-			ArchName: "x86"或"x64"
-			SysDir:
-				"C:\Windows\System32" (Windows 32bits, 以下簡稱 Win32)
-				"C:\Windows\SysWOW64" (Windows 64bits, KuShellExtension 32bits, 以下簡稱WOW64)
-				"C:\Windows\System32" (Windows 64bits, KuShellExtension 64bits, 以下簡稱Win64)
-			SysDir32:
-				"C:\Windows\System32" (Win32)
-				"C:\Windows\SysWOW64" (WOW64 及 Win64)
-			SysDir64:
-				"C:\Windows\System32" (Win32, WOW64, Win64)
-			ProgramFiles:
-				"C:\Program Files" (Win32)
-				"C:\Program Files (x86)" (WOW64)
-				"C:\Program Files" (Win64)
-			ProgramFiles32:
-				"C:\Program Files" (Win32)
-				"C:\Program Files (x86)" (WOW64 及 Win64)
-			ProgramFiles64:
-				"C:\Program Files" (Win32, WOW64, Win64)
-			Documents: 我的文件夾
-			CommonDocuments: 共用文件夾
-			Pictures: 我的圖片
-			CommonPictures: 共用圖片
-			Music: 我的音樂
-			CommonMusic: 共用音樂
-			Video: 我的影片
-			CommonPictures: 共用影片
-			Desktop: 桌面
-			CommonMusic: 桌面 (所有使用者)
-			Startup: 啟動
-			CommonStartup: 啟動 (所有使用者)
-	-->
+    ${var:NAME}
+        Expand to VALUE which is defined as above or some built-in ones.
+
+    ${env:NAME}
+        Expand to environment variables named NAME. (%NAME%)
+
+    ${NAME}
+        Expand to ${var:NAME} first, or expand to ${env:NAME} if ${var:NAME} is not exist.
+
+    built-in variables:
+        CONFIG: The path of configuration file.
+        Arch: Expand to 32 on 32bits Windows, 64 on 64bits Windows (even in WOW64 mode).
+        ArchName: "x86" or "x64", depend on OS (not CPU).
+        SysDir:
+            "C:\Windows\System32" (Windows 32bits, represent as Win32 following)
+            "C:\Windows\SysWOW64" (Windows 64bits, KuShellExtension 32bits, represent as WOW64 following)
+            "C:\Windows\System32" (Windows 64bits, KuShellExtension 64bits, represent as Win64 following)
+        SysDir32:
+            "C:\Windows\System32" (Win32)
+            "C:\Windows\SysWOW64" (WOW64 and Win64)
+        SysDir64:
+            "C:\Windows\System32" (Win32, WOW64, Win64)
+        ProgramFiles:
+            "C:\Program Files" (Win32)
+            "C:\Program Files (x86)" (WOW64)
+            "C:\Program Files" (Win64)
+        ProgramFiles32:
+            "C:\Program Files" (Win32)
+            "C:\Program Files (x86)" (WOW64 and Win64)
+        ProgramFiles64:
+            "C:\Program Files" (Win32, WOW64, Win64)
+        Documents: "My Documents" folder
+        CommonDocuments: "Common Documents" folder
+
+        Other available varables:
+          Pictures, CommonPictures, Music, CommonMusic, Video, CommonVideo,
+          Desktop, CommonDesktop, Startup, CommonStartup
+-->
+
 	<var name="7zDir">${var:ProgramFiles64}\7-Zip</var>
 	<var name="7zG">${var:7zDir}\7zG.exe</var>
 	<var name="7zFM">${var:7zDir}\7zFM.exe</var>
@@ -66,131 +67,170 @@
 	<var name="dll">.dll .ax .acm .vcm</var>
 	<var name="iso">.mds .mdf .ccd .img .cue .bin .iso .bwt .cdi .nrg .pdi .b5t .isz</var>
 
-	<!--
-		<menu name="子選單名稱" (預試值: 無)
-			class="要顯示的檔案類型" (預試值: 無)
-			icon="圖示檔" (預試值: 無)>
-			<menuitem name="項目名稱" (預試值: 無)
-				class="要顯示的檔案類型" (預試值: *)
-				icon="圖示檔" (預試值: 被執行程式的圖示)
-				action="execute|builtin" (execute: 執行一般指令. builtin:執行內建指令. 預試值: execute)
-				console="true|false" (!!命令列程式限定!! true: 顯示命令提示字元視窗. false: 不顯示命令提示字元視窗. 預試值: true)
-				multiple="N" (當使用者選擇N個檔案時顯示. N = 0則無限制. 預試值: 根據動作內容自動判斷)
-				>
-				要執行的動作(請看下面的詳細說明)
-			</menuitem>
-		</menu>
+<!--
+MENUS
 
-		要建立分隔線可用 "----" (4個減號) 當項目名稱:
-			<menuitem name="----" />
-
-		"class=":
-			.???			附檔名
-			*				所有檔案(不包含資料夾)
-			folder			資料夾
-
-		"icon=": 檔名[,序列數]
-			"C:\Windows\System32\shell32.dll,2" = shell32.dll 內的第三個圖示(由 0 開始算起是第一個)
-
-		動作內容設定:
-			%變數:
-				%1 %2 %3 ... %9 = 被選取的第一個到第九個檔案
-				%w = 工作目錄
-				%z = 最適合拿來當封包名稱
-				%* = 選取的所有檔案
-				%@ = 同上，不過會被分開執行，例如選取了十個檔案，那該指令就會被執行十次
-				%u[數字] = 產生一個暫存清單檔案(UTF-8)，數字代表要略過幾個檔案，例如WinRAR需要略過第一個檔案
-				%L[數字] = 產生一個暫存清單檔案(UTF-16)
-				%l[數字] = 產生一個暫存清單檔案(系統預設編碼)
-				%c[數字] = 剪貼簿裡面的檔案，數字代表第幾個檔案，例如%c0代表剪貼簿裡面的第一個檔案
-				%% = '%'字元
-
-				%變數可用一些參數修飾，格式是 %~[參數]變數，如 %~dp1 可修飾 %1
-				有以下參數可使用:
-					d = 磁碟代號
-					p = 目錄(不含磁碟代號)
-					n = 檔名(不含附檔名)
-					x = 附檔名
-					s = 短檔名(只在該檔名含有非系統編碼的Unicode字元時生效)，適合用在不支援Unicode檔名的程式
-
-					Ex. %1 = "C:\path\to\the\file.txt"
-						%~d1 = "C:"
-						%~p1 = "\path\to\the\"
-						%~dp1 = "C:\path\to\the\"
-						%~nx1 = "file.txt"
-						%~dpn1 = "C:\path\to\the\file"
-
-			因為有些檔名可能會包含空白字元，所以需要用引號( " )刮起來，但xml裡面引號是特殊字元，
-			所以必須用 &quot; 代替，不過你不需要為 %@ %* 加上引號，KuShellExtension會自動加上
-
-			內建指令:
-				DropSymLinks [0|1]:
-					Vista以上限定，產生symbolic links，來源是剪貼簿裡面的檔案，傳入參數 0 代表用相對路徑，參數 1 代表則是絕對路徑
-				DropJunctions:
-					產生 junctions，來源是剪貼簿裡面的目錄
-				DropHardLinks
-					產生 hard links，來源是剪貼簿裡面的檔案
-	-->
-	<menu name="AppLocale" icon="${var:AppLoc}">
-		<menuitem name="日本語" class="${var:exe}">&quot;${var:AppLoc}&quot; &quot;%1&quot; /L0411</menuitem>
-		<menuitem name="正體中文" class="${var:exe}">&quot;${var:AppLoc}&quot; &quot;%1&quot; /L0404</menuitem>
-		<menuitem name="简体中文" class="${var:exe}">&quot;${var:AppLoc}&quot; &quot;%1&quot; /L0804</menuitem>
-		<menuitem name="7-Zip (日本語)" class="${var:archive}" icon="${var:7zFM}">&quot;${var:AppLoc}&quot; &quot;${var:7zFM}&quot; &quot;\&quot;%1\&quot;&quot; /L0411</menuitem>
-		<menuitem name="7-Zip (正體中文)" class="${var:archive}" icon="${var:7zFM}">&quot;${var:AppLoc}&quot; &quot;${var:7zFM}&quot; &quot;\&quot;%1\&quot;&quot; /L0404</menuitem>
-		<menuitem name="7-Zip (简体中文)" class="${var:archive}" icon="${var:7zFM}">&quot;${var:AppLoc}&quot; &quot;${var:7zFM}&quot; &quot;\&quot;%1\&quot;&quot; /L0804</menuitem>
+SYNOPSIS
+	<menu name="NAME"
+		class="CLASSES"
+		icon="ICON">
+		<menuitem name="NAME"
+			class="CLASSES"
+			icon="ICON"
+			action="execute|builtin"
+			console="true|false"
+			multiple="N"
+			>
+			ACTION
+		</menuitem>
 	</menu>
-	<menu name="掛載映像檔" class="${var:iso}" icon="${var:Alcohol}">
-		<!--
-			for ... in 迴圈
-			<for 變數1="變數值清單1" 變數2="變數值清單2" ...>...</for>
-			下面的這實際例子會產生掛載映像檔到H: I: J: K:的選單項目
-		-->
+
+	<for V="V1 V2 V3..." U="U1 U2 U3" ...>...</for>
+
+DESCRIPTION
+	<menu>...</menu>
+		Define a submenu.
+	<menuitem>...</menutiem>
+		Define a leaf entry of menu. To create a separator, use "----" (four hyphens) as the name. (<menuitem name="----" />)
+	<for V="V1 V2 V3..." U="U1 U2 U3 ..." ...>...</for>
+		For ... in loop, ${var:V} and ${var:U} are available in the <for></for> scope.
+
+ATTRIBUTES
+	"name="
+		The string shown on the menu.
+
+	"icon="
+		The path of icon shown on the the menu, it can be a DLL, excuatable file (EXE), or icon file (ICO). If there are multiple icons in a file, an optional index can be append to the path with a comma. If the icon is not specified in a menu entry, the icon of the application would be used.
+
+		Ex. icon="C:\Windows\System32\shell32.dll,2"
+			will use the third icon in "shell32.dll", the index is counted from zero.
+			
+	"class="
+		Specify the menu entry or the submenu should show on what situations. The following formats are allowed.
+		.???		Matches file extension
+		*			Matches all files
+		folder		Matches all folders
+
+		If the class of a submenu(<menu>) is not specified, it will be shown if there is a child entry should be shown. On the other hand, if the class of a menu(<menuitem>) is not specified, it will use it parent setting if it exists, or "*" will be used.
+
+	"action="
+		The type of the action when user click on the menu entry, current only two type are available. The first is "execute", which is the default, it means execute the command line defined in the (text) node. The second is "builtin", which means the action is pre-defined by KuShellExtension, see BUILTIN ACTIONS section for details.
+
+	"console="
+		Set this to true if the application is a console program and you would like to hide the command prompt window. Don't use it with normal GUI programs.
+
+	"multiple="
+		Specify the number of arguments the action supports. The menu entry will only be shown when the number of files/folders is selected. Set it to 0 means it is unlimited. If this value is not specified, KuShellExtension tries to detect it by the command line.
+
+ACTIONS
+	Normal actions is described as a command line, for the usability, some (dynamic) variables are allowed (see % EXPENSION below). Note you may need to use quotes for the strings that contains spaces, but do not use " directly, because it is not allowed in XML, use &quot; instead.
+
+% EXPENSION
+	%1 %2 %3 ... %9
+		Expand to the first, second, third, ... file the user selected.
+	%w
+		Expand to the working directory.
+	%z
+		Expand to archive name, useful with WinZIP/WinRAR/7-Zip etc. See the example below.
+	%*
+		Expand to all files the user selected. DO NOT USE QUOTES WITH THIS.
+	%@
+		The same with the above, except the command will be executed separately. For example, the user selected 10 files and click the menu entry, then the command would be executed 10 times. DO NOT USE QUOTES WITH THIS.
+	%u[N]
+		Generates a UTF-8 encoded file name list and expand to the path of the list file. N is a number that tells KuShellExtension should skip first N files. This is used by WinRAR, which need to skip first file.
+	%L[N]
+		Generates a UTF-16 encoded file name list and expand to the path of the list file.
+	%l[N]
+		Generates a system codepage encoded file name list and expand to the path of the list file.
+	%c[N]
+		Expand to the file path in the clipboard, you copy the files from  explorer of copy them as text. N is the index of files in clipboard, which is counted from zero. (%c0 -> first file, %c1 -> second file, ...)
+	%%
+		Expand to '%' character.
+
+PREFIX OF % EXPENSION
+	Some prefix can be use in % EXPENSION, the format is like Windows Command Prompt. The following are available prefix characters.
+
+	d
+		Drive letter.
+	p
+		Directory without drive letter.
+	n
+		File name without extension.
+	x
+		File extension.
+	s
+		System codepage compatible path, substitutes incompatible parts with 8.3 short file name.
+
+	Ex. %1 = "C:\path\to\the\file.txt"
+		%~d1 = "C:"
+		%~p1 = "\path\to\the\"
+		%~dp1 = "C:\path\to\the\"
+		%~nx1 = "file.txt"
+		%~dpn1 = "C:\path\to\the\file"
+
+BUILTIN ACTIONS
+	DropSymLinks [0|1]
+		Create symbolic links (>= Vista), the target of links are taken from clipboard. This command takes one argument with the value 0 or 1. Use 0 to create the links with relative path, 1 to create the links with absolute path.
+	DropJunctions
+		Create junctions.
+	DropHardLinks
+		Create hard links.
+-->
+	<menu name="AppLocale" icon="${var:AppLoc}">
+		<for lang="Japanese Chinese(Trad.) Chinese(Simp.)" id="0411 0404 0804" icon="107 216 43">
+			<menuitem name="${var:lang}" class="${var:exe} ${var:cmd}">&quot;${var:AppLoc}&quot; &quot;%1&quot; /L${var:id}</menuitem>
+			<menuitem name="7-Zip (${var:lang})" class="${var:archive}">&quot;${var:AppLoc}&quot; &quot;${var:7zFM}&quot; &quot;\&quot;%1\&quot;&quot; /L${var:id}</menuitem>
+			<menuitem name="WinRAR (${var:lang})" class="${var:archive}">&quot;${var:AppLoc}&quot; &quot;${var:WinRAR}&quot; &quot;\&quot;%1\&quot;&quot; /L${var:id}</menuitem>
+			<menuitem name="MSI (${var:lang})" class=".msi">&quot;${var:AppLoc}&quot; &quot;${var:SysDir}\msiexec.exe&quot; /i &quot;\&quot;%1\&quot;&quot; /L${var:id}</menuitem>
+		</for>
+	</menu>
+	<menu name="Mount CD Image" class="${var:iso}" icon="${var:Alcohol}">
 		<for disk="H I J K">
 			<menuitem name="${var:disk}:" icon="${var:CDDriveIcon}">&quot;${var:AxCmd}&quot; ${var:disk}: /M:&quot;%1&quot;</menuitem>
 		</for>
 	</menu>
 	<menuitem name="----" class="* folder" />
 	<menu name="&amp;7-Zip" icon="${var:7zFM}">
-		<menuitem name="解壓縮到 *\">${var:7zG} x -o&quot;%w\*&quot; -an -ai&quot;@%u&quot;</menuitem>
-		<menuitem name="解壓縮至此">${var:7zG} x -o&quot;%w&quot; -an -ai&quot;@%u&quot;</menuitem>
-		<menuitem name="解壓縮到...">${var:7zG} x -o&quot;%~dpn1&quot; -ad -an -ai&quot;@%u&quot;</menuitem>
-		<menuitem name="加到壓縮檔..." class="* folder">${var:7zG} a -i&quot;@%u&quot; -ad -- &quot;%z&quot;</menuitem>
-		<menuitem name="加到 .7z 壓縮檔" class="* folder">${var:7zG} a -i&quot;@%u&quot; -t7z -- &quot;%z.7z&quot;</menuitem>
-		<menuitem name="加到 .zip 壓縮檔" class="* folder">${var:7zG} a -i&quot;@%u&quot; -tzip -- &quot;%z.zip&quot;</menuitem>
-		<menuitem name="測試壓縮檔">${var:7zG} t -an -ai&quot;@%u&quot;</menuitem>
-		<menuitem name="開啟壓縮檔">${var:7zFM} &quot;%1&quot;</menuitem>
+		<menuitem name="Extract to *\">${var:7zG} x -o&quot;%w\*&quot; -an -ai&quot;@%u&quot;</menuitem>
+		<menuitem name="Extract to here">${var:7zG} x -o&quot;%w&quot; -an -ai&quot;@%u&quot;</menuitem>
+		<menuitem name="Extract to ...">${var:7zG} x -o&quot;%~dpn1&quot; -ad -an -ai&quot;@%u&quot;</menuitem>
+		<menuitem name="Add to archive ..." class="* folder">${var:7zG} a -i&quot;@%u&quot; -ad -- &quot;%z&quot;</menuitem>
+		<menuitem name="Add to .7z archive" class="* folder">${var:7zG} a -i&quot;@%u&quot; -t7z -- &quot;%z.7z&quot;</menuitem>
+		<menuitem name="Add to .zip archive" class="* folder">${var:7zG} a -i&quot;@%u&quot; -tzip -- &quot;%z.zip&quot;</menuitem>
+		<menuitem name="Test the archive">${var:7zG} t -an -ai&quot;@%u&quot;</menuitem>
+		<menuitem name="Open the archive">${var:7zFM} &quot;%1&quot;</menuitem>
 	</menu>
 	<menu name="WinRAR" icon="${var:WinRAR}">
-		<menuitem name="解壓縮到 *\">&quot;${var:WinRAR}&quot; x -iext -ow -ver -anf=&quot;%L1&quot; -scul -ad -- &quot;%1&quot; &quot;%w&quot;</menuitem>
-		<menuitem name="解壓縮至此">&quot;${var:WinRAR}&quot; x -iext -ow -ver -anf=&quot;%L1&quot; -scul -- &quot;%1&quot; &quot;%w&quot;</menuitem>
-		<menuitem name="解壓縮到...">&quot;${var:WinRAR}&quot; x -iext -ow -ver -anf=&quot;%L1&quot; -scul -- &quot;%1&quot; &quot;?\&quot;</menuitem>
-		<menuitem name="加到壓縮檔..." class="* folder">&quot;${var:WinRAR}&quot; a -ep1 -scul -r0 -iext -- . &quot;@%L&quot;</menuitem>
-		<menuitem name="加到 .rar 壓縮檔" class="* folder">&quot;${var:WinRAR}&quot; a -ep1 -scul -r0 -iext -- &quot;%z.rar&quot; &quot;@%L&quot;</menuitem>
-		<menuitem name="測試壓縮檔">&quot;${var:WinRAR}&quot; t -iext -anf=&quot;%L1&quot; -scul -- &quot;%1&quot;</menuitem>
-		<menuitem name="修復壓縮檔">&quot;${var:WinRAR}&quot; r -iext -anf=&quot;%L1&quot; -scul -- &quot;%1&quot; &quot;%w&quot;</menuitem>
-		<menuitem name="開啟壓縮檔">&quot;${var:WinRAR}&quot; &quot;%1&quot;</menuitem>
+		<menuitem name="Extract to *\">&quot;${var:WinRAR}&quot; x -iext -ow -ver -anf=&quot;%L1&quot; -scul -ad -- &quot;%1&quot; &quot;%w&quot;</menuitem>
+		<menuitem name="Extract to here">&quot;${var:WinRAR}&quot; x -iext -ow -ver -anf=&quot;%L1&quot; -scul -- &quot;%1&quot; &quot;%w&quot;</menuitem>
+		<menuitem name="Extract to ...">&quot;${var:WinRAR}&quot; x -iext -ow -ver -anf=&quot;%L1&quot; -scul -- &quot;%1&quot; &quot;?\&quot;</menuitem>
+		<menuitem name="Add to archive ..." class="* folder">&quot;${var:WinRAR}&quot; a -ep1 -scul -r0 -iext -- . &quot;@%L&quot;</menuitem>
+		<menuitem name="Add to .rar archive" class="* folder">&quot;${var:WinRAR}&quot; a -ep1 -scul -r0 -iext -- &quot;%z.rar&quot; &quot;@%L&quot;</menuitem>
+		<menuitem name="Test the archive">&quot;${var:WinRAR}&quot; t -iext -anf=&quot;%L1&quot; -scul -- &quot;%1&quot;</menuitem>
+		<menuitem name="Recover the archive">&quot;${var:WinRAR}&quot; r -iext -anf=&quot;%L1&quot; -scul -- &quot;%1&quot; &quot;%w&quot;</menuitem>
+		<menuitem name="Open the archive">&quot;${var:WinRAR}&quot; &quot;%1&quot;</menuitem>
 	</menu>
 	<menu name="UniExtract" icon="${var:UniExtract}">
-		<menuitem name="解壓縮到 *\">${var:UniExtract} %@ /sub</menuitem>
-		<menuitem name="解壓縮至此">${var:UniExtract} %@ %~dp@</menuitem>
-		<menuitem name="開啟壓縮檔">${var:UniExtract} &quot;%1&quot;</menuitem>
+		<menuitem name="Extract to *\">${var:UniExtract} %@ /sub</menuitem>
+		<menuitem name="Extract to here">${var:UniExtract} %@ %~dp@</menuitem>
+		<menuitem name="Open the archive">${var:UniExtract} &quot;%1&quot;</menuitem>
 	</menu>
 	<menu name="UPX">
-		<menuitem name="壓縮" class=".exe ${var:dll}">${var:upx}.exe --lzma -9 %*</menuitem>
-		<menuitem name="解壓縮" class=".exe ${var:dll}">${var:upx}.exe -d %*</menuitem>
+		<menuitem name="Compress" class=".exe ${var:dll}">${var:upx}.exe --lzma -9 %*</menuitem>
+		<menuitem name="Decompress" class=".exe ${var:dll}">${var:upx}.exe -d %*</menuitem>
 	</menu>
 	<menuitem name="----" class="* folder" />
 	<menu name="RegSvr32" class="${var:dll}">
-		<menuitem name="註冊">regsvr32.exe /s %@</menuitem>
-		<menuitem name="解除">regsvr32.exe /s /u %@</menuitem>
+		<menuitem name="Register">regsvr32.exe /s %@</menuitem>
+		<menuitem name="Unregister">regsvr32.exe /s /u %@</menuitem>
 	</menu>
-	<menuitem name="命令提示字元">${env:comspec} /k &quot;cd /d &quot;%1&quot;&quot;</menuitem>
-	<menu name="建立連結..." class="folder">
-		<menuitem name="符號連結(相對路徑)" action="builtin">DropSymLinks 0</menuitem>
-		<menuitem name="符號連結(絕對路徑)" action="builtin">DropSymLinks 1</menuitem>
-		<menuitem name="實體連結" action="builtin">DropHardLinks</menuitem>
-		<menuitem name="交叉點" action="builtin">DropJunctions</menuitem>
+	<menuitem name="Command Prompt">${env:comspec} /k &quot;cd /d &quot;%1&quot;&quot;</menuitem>
+	<menu name="Create links ..." class="folder">
+		<menuitem name="Symbolic links (relative)" action="builtin">DropSymLinks 0</menuitem>
+		<menuitem name="Symbolic links (absolute)" action="builtin">DropSymLinks 1</menuitem>
+		<menuitem name="Hard links" action="builtin">DropHardLinks</menuitem>
+		<menuitem name="Junctions" action="builtin">DropJunctions</menuitem>
 	</menu>
 	<menuitem name="----" class="* folder" />
-	<menuitem name="編輯設定" class="* folder" multiple="true">notepad.exe &quot;${var:CONFIG}&quot;</menuitem>
+	<menuitem name="KuShellExtension Configuration" class="* folder" multiple="true">notepad.exe &quot;${var:CONFIG}&quot;</menuitem>
 </config>
