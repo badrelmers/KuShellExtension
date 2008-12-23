@@ -2,7 +2,7 @@
 <config version="1">
 <!--
 VARIABLES
-    KuShellExtension allows users defines some variables to simplify the configuration, which will be substituted in attributes and text nodes of XML elements *after* it is defined in the configuration file.
+    KuShellExtension allows users define some variables to simplify the configuration, which will be substituted in attributes and text nodes of XML elements *after* it is defined in the configuration file.
     The names of user defined and built-in variables are case-sensitive, but environment variables are case-insensitive. All variables are static-binding, which means it only be expanded when KuShellExtension parses this file.
     KuShellExtension re-parses configuration whenever the configuration file is changed.
 
@@ -143,7 +143,7 @@ ACTIONS
 	%l[N]
 		Generates a system codepage encoded file name list and expand to the path of the list file.
 	%c[N]
-		Expand to the file path in the clipboard, you copy the files from  explorer of copy them as text. N is the index of files in clipboard, which is counted from zero. (%c0 -> first file, %c1 -> second file, ...)
+		Expand to the file path in the clipboard, you could copy the files from explorer or copy them as text. N is the index of files in clipboard, which is counted from zero. (%c0 -> first file, %c1 -> second file, ...)
 	%%
 		Expand to '%' character.
 
