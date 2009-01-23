@@ -157,16 +157,16 @@ HRESULT STDMETHODCALLTYPE CKuContextMenu::InvokeCommand(
 {
 	CMINVOKECOMMANDINFOEX *piciex = (CMINVOKECOMMANDINFOEX *) pici;
 
-	UINT id;
-	if (pici->cbSize == sizeof(CMINVOKECOMMANDINFOEX) && piciex->lpVerbW && !HIWORD(piciex->lpVerbW)) {
-		id = LOWORD(piciex->lpVerbW);
-	}
-	else if(pici->lpVerb && !HIWORD(pici->lpVerb)) {
-		id = LOWORD(pici->lpVerb);
-	}
-	else
-		return E_FAIL;
+	bool bUnicode = pici->cbSize == sizeof(CMINVOKECOMMANDINFOEX) && (pici->fMask & CMIC_MASK_UNICODE);
 
+	// pici->lpVerb == 0 or pici->lpVerbW == 0 are invalid because our ID is start from offset 1
+	UINT id;
+	if(pici->lpVerb && !HIWORD(pici->lpVerb)) // it seems lpVerb is more reliable than lpVerbW
+		id = LOWORD(pici->lpVerb);
+	else if (bUnicode && piciex->lpVerbW && !HIWORD(piciex->lpVerbW))
+		id = LOWORD(piciex->lpVerbW);
+	else
+		id = *(bUnicode ? (WORD *) piciex->lpVerbW : (WORD *) pici->lpVerb);
 	if (!m_menu.InvokeCommand(id + m_idCmdFirst))
 		return E_FAIL;
 
@@ -185,7 +185,20 @@ HRESULT STDMETHODCALLTYPE CKuContextMenu::GetCommandString(
 	/* [in] */ 
 	__in  UINT cchMax)
 {
-	return S_OK;
+	// stores menu ID in the buffer for verb.
+	switch (uType) {
+		case GCS_VERBA:
+			if ((cchMax * sizeof(char)) < sizeof(WORD))
+				return E_INVALIDARG;
+			*((WORD *) pszName) = idCmd & 0xFFFF;
+			break;
+		case GCS_VERBW:
+			if ((cchMax * sizeof(wchar_t)) < sizeof(WORD))
+				return E_INVALIDARG;
+			*((WORD *) pszName) = idCmd & 0xFFFF;
+			break;
+	}
+    return S_OK;
 }
 
 HRESULT STDMETHODCALLTYPE CKuContextMenu::HandleMenuMsg( 

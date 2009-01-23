@@ -56,7 +56,7 @@ bool CKuMenuSet::FromRaw(const BYTE *pXML, DWORD uLen)
 #ifdef _UNICODE
 	switch (DetectCodePage(pXML, uLen)) {
 		case CP_UTF8:
-			return FromString(CStringUTF16FromUTF8((LPCSTR) pXML));
+			return FromString(CStringWCharFromUTF8((LPCSTR) pXML));
 		case 1200: // UTF-16LE
 			return FromString((LPCTSTR) pXML);
 	}
@@ -772,7 +772,7 @@ bool CKuMenuSet::CMenuItem::InvokeCommand()
 														eol[0] = '\r';
 														eol[1] = '\n';
 														for (int i = iFrom;i < count;i++) {
-															CStringANSIFromUTF16 sFile(ExpandFileName(m_pKuMenuSet->m_aFiles[i], sFlags, sExpand));
+															CStringCharFromWChar sFile(ExpandFileName(m_pKuMenuSet->m_aFiles[i], sFlags, sExpand));
 															if (!WriteFile(hFile, (LPCVOID) sFile.GetString(), sFile.GetLength() * sizeof(char), &dwWritten, NULL) ||
 																!WriteFile(hFile, (LPCVOID) eol, 2, &dwWritten, NULL))
 																break;
@@ -786,7 +786,7 @@ bool CKuMenuSet::CMenuItem::InvokeCommand()
 														eol[1] = '\n';
 														if (WriteFile(hFile, bom, 3, &dwWritten, NULL)) {
 															for (int i = iFrom;i < count;i++) {
-																CStringUTF8FromUTF16 sFile(ExpandFileName(m_pKuMenuSet->m_aFiles[i], sFlags, sExpand));
+																CStringUTF8FromWChar sFile(ExpandFileName(m_pKuMenuSet->m_aFiles[i], sFlags, sExpand));
 																if (!WriteFile(hFile, (LPCVOID) sFile.GetString(), sFile.GetLength() * sizeof(char), &dwWritten, NULL) ||
 																	!WriteFile(hFile, (LPCVOID) eol, 2, &dwWritten, NULL))
 																	break;

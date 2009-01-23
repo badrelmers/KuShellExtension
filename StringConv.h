@@ -1,119 +1,128 @@
 #pragma once
 
-LPCWSTR StringUTF8ToUTF16(LPCSTR sUTF8, CStringW &sUTF16, int iChars = -1);
-LPCWSTR StringANSIToUTF16(LPCSTR sANSI, CStringW &sUTF16, int iChars = -1, UINT codepage = CP_ACP);
-LPCSTR StringUTF16ToUTF8(LPCWSTR sUTF16, CStringA &sUTF8, int iChars = -1);
-LPCSTR StringANSIToUTF8(LPCSTR sANSI, CStringA &sUTF8, int iChars = -1, UINT codepage = CP_ACP);
-LPCSTR StringUTF16ToANSI(LPCWSTR sUTF16, CStringA &sANSI, int iChars = -1, char chDef = '?', UINT codepage = CP_ACP);
-LPCSTR StringUTF8ToANSI(LPCSTR sUTF8, CStringA &sANSI, int iChars = -1, char chDef = '?', UINT codepage = CP_ACP);
+#ifdef _WIN32
+
+LPCWSTR StringUTF8ToWChar(LPCSTR sUTF8, CStringW &sWChar, int iChars = -1);
+LPCWSTR StringCharToWChar(LPCSTR sChar, CStringW &sWChar, int iChars = -1, UINT codepage = CP_ACP);
+LPCSTR StringWCharToUTF8(LPCWSTR sWChar, CStringA &sUTF8, int iChars = -1);
+LPCSTR StringCharToUTF8(LPCSTR sChar, CStringA &sUTF8, int iChars = -1, UINT codepage = CP_ACP);
+LPCSTR StringWCharToChar(LPCWSTR sWChar, CStringA &sChar, int iChars = -1, char chDef = '?', UINT codepage = CP_ACP);
+LPCSTR StringUTF8ToChar(LPCSTR sUTF8, CStringA &sChar, int iChars = -1, char chDef = '?', UINT codepage = CP_ACP);
 
 LPCWSTR _StringDummyConvW(LPCWSTR sSrc, CStringW &sDest, int iChars = -1);
 LPCSTR _StringDummyConvA(LPCSTR sSrc, CStringA &sDest, int iChars = -1);
 
 #ifdef _UNICODE
-#define StringTCHARToUTF16	_StringDummyConvW
-#define StringTCHARToUTF8	StringUTF16ToUTF8
-#define StringTCHARToANSI	StringUTF16ToANSI
-inline LPCWSTR StringUTF16ToTCHAR(LPCWSTR sUTF16, CStringW &sTCHAR, int iChars = -1, char chDef = '?')
-{ return _StringDummyConvW(sUTF16, sTCHAR, iChars); }
-inline LPCWSTR StringUTF8ToTCHAR(LPCSTR sUTF8, CStringW &sTCHAR, int iChars = -1, char chDef = '?')
-{ return StringUTF8ToUTF16(sUTF8, sTCHAR, iChars); }
-#define StringANSIToTCHAR	StringANSIToUTF16
+
+#define StringTCharToWChar	_StringDummyConvW
+#define StringTCharToUTF8	StringWCharToUTF8
+#define StringTCharToChar	StringWCharToChar
+inline LPCWSTR StringWCharToTChar(LPCWSTR sWChar, CStringW &sTChar, int iChars = -1, char chDef = '?')
+{ return _StringDummyConvW(sWChar, sTChar, iChars); }
+inline LPCWSTR StringUTF8ToTChar(LPCSTR sUTF8, CStringW &sTChar, int iChars = -1, char chDef = '?')
+{ return StringUTF8ToWChar(sUTF8, sTChar, iChars); }
+#define StringCharToTChar	StringCharToWChar
+
 #else
-#define StringTCHARToUTF16	StringANSIToUTF16
-#define StringTCHARToUTF8	StringANSIToUTF8
-#define StringTCHARToANSI	_StringDummyConvA
-#define StringUTF16ToTCHAR	StringUTF16ToANSI
-#define StringUTF8ToTCHAR	StringUTF8ToANSI
-#define StringANSIToTCHAR	_StringDummyConvA
-#endif
+// ! _UNICODE
+#define StringTCharToWChar	StringCharToWChar
+#define StringTCharToUTF8	StringCharToUTF8
+#define StringTCharToChar	_StringDummyConvA
+#define StringWCharToTChar	StringWCharToChar
+#define StringUTF8ToTChar	StringUTF8ToChar
+#define StringCharToTChar	_StringDummyConvA
 
-class CStringUTF16FromUTF8 : public CStringW
+#endif // _UNICODE
+
+class CStringWCharFromUTF8 : public CStringW
 {
 public:
-	CStringUTF16FromUTF8(LPCSTR sUTF8, int iChars = -1)
-	{ StringUTF8ToUTF16(sUTF8, *this, iChars); }
+	CStringWCharFromUTF8(LPCSTR sUTF8, int iChars = -1)
+	{ StringUTF8ToWChar(sUTF8, *this, iChars); }
 };
 
-class CStringUTF16FromANSI : public CStringW
+class CStringWCharFromChar : public CStringW
 {
 public:
-	CStringUTF16FromANSI(LPCSTR sANSI, int iChars = -1, UINT codepage = CP_ACP)
-	{ StringANSIToUTF16(sANSI, *this, iChars, codepage); }
+	CStringWCharFromChar(LPCSTR sChar, int iChars = -1, UINT codepage = CP_ACP)
+	{ StringCharToWChar(sChar, *this, iChars, codepage); }
 };
 
-class CStringUTF8FromUTF16 : public CStringA
+class CStringUTF8FromWChar : public CStringA
 {
 public:
-	CStringUTF8FromUTF16(LPCWSTR sUTF16, int iChars = -1)
-	{ StringUTF16ToUTF8(sUTF16, *this, iChars); }
+	CStringUTF8FromWChar(LPCWSTR sWChar, int iChars = -1)
+	{ StringWCharToUTF8(sWChar, *this, iChars); }
 };
 
-class CStringUTF8FromANSI : public CStringA
+class CStringUTF8FromChar : public CStringA
 {
 public:
-	CStringUTF8FromANSI(LPCSTR sANSI, int iChars = -1, UINT codepage = CP_ACP)
-	{ StringANSIToUTF8(sANSI, *this, iChars, codepage); }
+	CStringUTF8FromChar(LPCSTR sChar, int iChars = -1, UINT codepage = CP_ACP)
+	{ StringCharToUTF8(sChar, *this, iChars, codepage); }
 };
 
-class CStringANSIFromUTF16 : public CStringA
+class CStringCharFromWChar : public CStringA
 {
 public:
-	CStringANSIFromUTF16(LPCWSTR sUTF16, int iChars = -1, char chDef = '?', UINT codepage = CP_ACP)
-	{ StringUTF16ToANSI(sUTF16, *this, iChars, chDef, codepage); }
+	CStringCharFromWChar(LPCWSTR sWChar, int iChars = -1, char chDef = '?', UINT codepage = CP_ACP)
+	{ StringWCharToChar(sWChar, *this, iChars, chDef, codepage); }
 };
 
-class CStringANSIFromUTF8 : public CStringA
+class CStringCharFromUTF8 : public CStringA
 {
 public:
-	CStringANSIFromUTF8(LPCSTR sUTF8, int iChars = -1, char chDef = '?', UINT codepage = CP_ACP)
-	{ StringUTF8ToANSI(sUTF8, *this, iChars, chDef, codepage); }
+	CStringCharFromUTF8(LPCSTR sUTF8, int iChars = -1, char chDef = '?', UINT codepage = CP_ACP)
+	{ StringUTF8ToChar(sUTF8, *this, iChars, chDef, codepage); }
 };
 
 #ifdef _UNICODE
-#define CStringTCHARFromUTF16IfNeeded(s, ...) (s)
-#define CStringUTF16FromTCHARIfNeeded(s, ...) (s)
-#define CStringTCHARFromANSIIfNeeded(s, ...) CStringTCHARFromANSI((s), __VA_ARGS__)
-#define CStringANSIFromTCHARIfNeeded(s, ...) CStringANSIFromTCHAR((s), __VA_ARGS__)
+#define CStringTCharFromWCharIfNeeded(s, ...) (s)
+#define CStringWCharFromTCharIfNeeded(s, ...) (s)
+#define CStringTCharFromCharIfNeeded(s, ...) CStringTCharFromChar((s), __VA_ARGS__)
+#define CStringCharFromTCharIfNeeded(s, ...) CStringCharFromTChar((s), __VA_ARGS__)
 
-class CStringTCHARFromUTF16 : public CStringW
+class CStringTCharFromWChar : public CStringW
 {
 public:
-	CStringTCHARFromUTF16(LPCWSTR sUTF16, int iChars = -1, char chDef = '?')
-	{ _StringDummyConvW(sUTF16, *this, iChars); }
+	CStringTCharFromWChar(LPCWSTR sWChar, int iChars = -1, char chDef = '?')
+	{ _StringDummyConvW(sWChar, *this, iChars); }
 };
-class CStringTCHARFromUTF8 : public CStringW
+class CStringTCharFromUTF8 : public CStringW
 {
 public:
-	CStringTCHARFromUTF8(LPCSTR sUTF8, int iChars = -1, char chDef = '?')
-	{ StringUTF8ToUTF16(sUTF8, *this, iChars); }
+	CStringTCharFromUTF8(LPCSTR sUTF8, int iChars = -1, char chDef = '?')
+	{ StringUTF8ToWChar(sUTF8, *this, iChars); }
 };
-typedef	CStringUTF16FromANSI	CStringTCHARFromANSI;
-typedef CStringW				CStringUTF16FromTCHAR;
-typedef CStringUTF8FromUTF16	CStringUTF8FromTCHAR;
-typedef CStringANSIFromUTF16	CStringANSIFromTCHAR;
+typedef	CStringWCharFromChar	CStringTCharFromChar;
+typedef CStringW				CStringWCharFromTChar;
+typedef CStringUTF8FromWChar	CStringUTF8FromTChar;
+typedef CStringCharFromWChar	CStringCharFromTChar;
+
 #else
-#define CStringTCHARFromUTF16IfNeeded(s, ...) CStringTCHARFromUTF16((s), __VA_ARGS__)
-#define CStringUTF16FromTCHARIfNeeded(s, ...) CStringUTF16FromTCHAR((s), __VA_ARGS__)
-#define CStringTCHARFromANSIIfNeeded(s, ...) (s)
-#define CStringANSIFromTCHARIfNeeded(s, ...) (s)
+// ! _UNICODE
+#define CStringTCharFromWCharIfNeeded(s, ...) CStringTCharFromWChar((s), __VA_ARGS__)
+#define CStringWCharFromTCharIfNeeded(s, ...) CStringWCharFromTChar((s), __VA_ARGS__)
+#define CStringTCharFromCharIfNeeded(s, ...) (s)
+#define CStringCharFromTCharIfNeeded(s, ...) (s)
 
-typedef CStringANSIFromUTF16	CStringTCHARFromUTF16;
-typedef CStringANSIFromUTF8		CStringTCHARFromUTF8;
-typedef	CStringA				CStringTCHARFromANSI;
-typedef CStringUTF16FromANSI	CStringUTF16FromTCHAR;
-typedef CStringUTF8FromANSI		CStringUTF8FromTCHAR;
-typedef CStringA				CStringANSIFromTCHAR;
-#endif
+typedef CStringCharFromWChar	CStringTCharFromWChar;
+typedef CStringCharFromUTF8		CStringTCharFromUTF8;
+typedef	CStringA				CStringTCharFromChar;
+typedef CStringWCharFromChar	CStringWCharFromTChar;
+typedef CStringUTF8FromChar		CStringUTF8FromTChar;
+typedef CStringA				CStringCharFromTChar;
+#endif // _UNICODE
 
-typedef CStringTCHARFromUTF16	CStringFromUTF16;
-typedef CStringTCHARFromUTF8	CStringFromUTF8;
-typedef	CStringTCHARFromANSI	CStringFromANSI;
+typedef CStringTCharFromWChar	CStringFromWChar;
+typedef CStringTCharFromUTF8	CStringFromUTF8;
+typedef	CStringTCharFromChar	CStringFromChar;
+
+#endif // _WIN32
 
 template <class CHAR_T>
 void CharConvEndian(CHAR_T *pChar)
 {
-	_ASSERT(sizeof(CHAR_T) % 2 == 0);
 	BYTE *pCh = (BYTE *) pChar, chTemp;
 	int i, j;
 	for (i = 0, j = sizeof(CHAR_T) - 1;i < (sizeof(CHAR_T) >> 1);i++, j--) {
@@ -125,10 +134,9 @@ void CharConvEndian(CHAR_T *pChar)
 
 // uChars = 0 ==> treat 'sSrc' as NULL-terminal
 template <class CHAR_T>
-UINT StringConvEndian(CHAR_T *sSrc, UINT uChars = 0)
+unsigned long StringConvEndian(CHAR_T *sSrc, unsigned long uChars = 0)
 {
-	_ASSERT(sSrc);
-	UINT i;
+	unsigned long i;
 	for (i = 0;sSrc[i] && (uChars == 0 || i < uChars);i++)
 		CharConvEndian(sSrc + i);
 	return i;
