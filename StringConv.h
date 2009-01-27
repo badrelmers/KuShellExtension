@@ -120,7 +120,7 @@ typedef	CStringTCharFromChar	CStringFromChar;
 
 #endif // _WIN32
 
-template <class CHAR_T>
+template <typename CHAR_T>
 void CharConvEndian(CHAR_T *pChar)
 {
 	BYTE *pCh = (BYTE *) pChar, chTemp;
@@ -133,7 +133,7 @@ void CharConvEndian(CHAR_T *pChar)
 }
 
 // uChars = 0 ==> treat 'sSrc' as NULL-terminal
-template <class CHAR_T>
+template <typename CHAR_T>
 unsigned long StringConvEndian(CHAR_T *sSrc, unsigned long uChars = 0)
 {
 	unsigned long i;

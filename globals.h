@@ -19,7 +19,7 @@ extern BOOL bIsWow64;
 #define SYMBOLIC_LINK_FLAG_DIRECTORY (0x1)
 
 extern HMODULE hModule;
-extern TCHAR sModulePath[];
+extern CString sModulePath;
 extern TCHAR *sBlackList[];
 extern SYSVER SysVer;
 

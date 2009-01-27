@@ -434,8 +434,7 @@ void CKuMenuSet::InitBuiltinVars()
 
 #define CSIDL_SETVAR(id, name) \
 	if (SHGetSpecialFolderPath(NULL, sys.GetBufferSetLength(KU_MAX_PATH), (id), FALSE)) \
-		m_BuiltinVars.SetAt((name), sys); \
-	sys.ReleaseBuffer();
+	{ sys.ReleaseBuffer(); m_BuiltinVars.SetAt((name), sys); } else sys.ReleaseBuffer();
 
 	CSIDL_SETVAR(CSIDL_PERSONAL, _T("Documents"));
 	CSIDL_SETVAR(CSIDL_COMMON_DOCUMENTS, _T("CommonDocuments"));
@@ -723,13 +722,13 @@ bool CKuMenuSet::CMenuItem::InvokeCommand()
 									TCHAR sFile[KU_MAX_PATH];
 									UINT uCount = DragQueryFile(hDrop, (UINT)-1, NULL, 0);
 									if (i != -1) {
-										if ((UINT) i < uCount && DragQueryFile(hDrop, i, sFile, ARRSIZE(sFile)))
+										if ((UINT) i < uCount && DragQueryFile(hDrop, i, sFile, _countof(sFile)))
 											for (size_t n = 0;n < aCmds.GetCount();n++)
 												aCmds[n] += ExpandFileName(sFile, sFlags, sExpand);
 									}
 									else {
 										for (i = 0;(UINT) i < uCount;i++) {
-											if (DragQueryFile(hDrop, i, sFile, ARRSIZE(sFile)))
+											if (DragQueryFile(hDrop, i, sFile, _countof(sFile)))
 												for (size_t n = 0;n < aCmds.GetCount();n++)
 													aCmds[n].AppendFormat(_T("%s\"%s\""), (i == 0 ? _T("") : _T(" ")), ExpandFileName(sFile, sFlags, sExpand));
 										}
@@ -744,7 +743,7 @@ bool CKuMenuSet::CMenuItem::InvokeCommand()
 									_sntscanf(ptr + 2, offset, _T("%d"), &iFrom);
 								if (pShellExecuteThread->m_sTempFile.IsEmpty()) {
 									TCHAR sTempPath[KU_MAX_PATH];
-									if (GetTempPath(ARRSIZE(sTempPath), sTempPath)) {
+									if (GetTempPath(_countof(sTempPath), sTempPath)) {
 										if (GetTempFileName(sTempPath, _T("ku."), 0, pShellExecuteThread->m_sTempFile.GetBufferSetLength(KU_MAX_PATH))) {
 											pShellExecuteThread->m_sTempFile.ReleaseBuffer();
 											HANDLE hFile = CreateFile(pShellExecuteThread->m_sTempFile, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_TEMPORARY, NULL);
@@ -865,7 +864,7 @@ bool CKuMenuSet::CMenuItem::InvokeCommand()
 										TCHAR sFile[KU_MAX_PATH];
 										UINT uCount = DragQueryFile(hDrop, (UINT)-1, NULL, 0);
 										for (UINT i = 0;i < uCount;i++) {
-											if (DragQueryFile(hDrop, i, sFile, ARRSIZE(sFile)))
+											if (DragQueryFile(hDrop, i, sFile, _countof(sFile)))
 												DropLinks(m_pKuMenuSet->m_aFiles[0], sFile, uFlags);
 										}
 									}

@@ -3,7 +3,7 @@
 <!--
 VARIABLES
     KuShellExtension allows users define some variables to simplify the configuration, which will be substituted in attributes and text nodes of XML elements *after* it is defined in the configuration file.
-    The names of user defined and built-in variables are case-sensitive, but environment variables are case-insensitive. All variables are static-binding, which means it only be expanded when KuShellExtension parses this file.
+    The names of user defined and built-in variables are case-sensitive, but environment variables are case-insensitive. All variables are static-binding, which means it is only expanded when KuShellExtension parses this file.
     KuShellExtension re-parses configuration whenever the configuration file is changed.
 
     <var name="NAME">VALUE</var>

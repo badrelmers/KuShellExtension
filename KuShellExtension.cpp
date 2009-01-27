@@ -2,16 +2,58 @@
 //
 
 #include "stdafx.h"
-#include "KuShellExtension.h"
+#include "KuShellExtensionFactory.h"
 #include "KuContextMenu.h"
 #include "globals.h"
 #include "dll.h"
 
+// Default CLSIDs, can be changed in configure file.
 #ifdef _WIN64
-#define KU_SHELL_EXTENSION_STR _T("!!KuShellExtension64")
+#define CLSID_CONFIG _T("CLSID64")
+// {72F6A03F-7B17-4e65-AE37-666FC9024FA2}
+CLSID g_CLSID = 
+{ 0x72f6a03f, 0x7b17, 0x4e65, { 0xae, 0x37, 0x66, 0x6f, 0xc9, 0x2, 0x4f, 0xa2 } };
 #else
-#define KU_SHELL_EXTENSION_STR _T("!!KuShellExtension32")
+#define CLSID_CONFIG _T("CLSID32")
+// {ACF4C166-8665-462d-B701-D4978E0009A1}
+CLSID g_CLSID = 
+{ 0xacf4c166, 0x8665, 0x462d, { 0xb7, 0x1, 0xd4, 0x97, 0x8e, 0x0, 0x9, 0xa1 } };
 #endif
+
+CString g_sName;
+CString g_sCLSID;
+
+bool InitConfig()
+{
+	CKuContextMenu::LoadConfig();
+	if (CKuContextMenu::m_menu.GetOurVariable(CLSID_CONFIG, g_sCLSID)) {
+		if (g_sCLSID.GetLength() != 38)
+			return false;
+		g_sCLSID.MakeUpper();
+
+		DWORD dwData[5] = {0};
+		// use DWORDs instead of passing CLSID members directly, because %X uses 4 bytes.
+		if (_stscanf(g_sCLSID, _T("{%08X-%04X-%04X-%04X-%04X%08X}"), &g_CLSID.Data1, dwData, dwData + 1, dwData + 2, dwData + 3, dwData + 4) != 6)
+			return false;
+		g_CLSID.Data2 = (WORD) dwData[0];
+		g_CLSID.Data3 = (WORD) dwData[1];
+		g_CLSID.Data4[0] = (BYTE) (dwData[2] >> 8);
+		g_CLSID.Data4[1] = (BYTE) dwData[2];
+		g_CLSID.Data4[2] = (BYTE) (dwData[3] >> 8);
+		g_CLSID.Data4[3] = (BYTE) dwData[3];
+		g_CLSID.Data4[4] = (BYTE) (dwData[4] >> 24);
+		g_CLSID.Data4[5] = (BYTE) (dwData[4] >> 16);
+		g_CLSID.Data4[6] = (BYTE) (dwData[4] >> 8);
+		g_CLSID.Data4[7] = (BYTE) dwData[4];
+	}
+	else
+		g_sCLSID.Format(_T("{%08X-%04X-%04X-%02X%02X-%02X%02X%02X%02X%02X%02X}"), g_CLSID.Data1, g_CLSID.Data2, g_CLSID.Data3,
+			g_CLSID.Data4[0], g_CLSID.Data4[1], g_CLSID.Data4[2], g_CLSID.Data4[3], g_CLSID.Data4[4], g_CLSID.Data4[5], g_CLSID.Data4[6], g_CLSID.Data4[7]);
+
+	g_sName.Format(_T("!!KuShellExtension-%s"), g_sCLSID);
+
+	return true;
+}
 
 BOOL APIENTRY DllMain( HMODULE hModule,
                        DWORD  ul_reason_for_call,
@@ -22,25 +64,28 @@ BOOL APIENTRY DllMain( HMODULE hModule,
 	{
 		case DLL_PROCESS_ATTACH:
 			{
+#ifdef _MSC_VER
 				_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF); //detect memory leaks
-
-				GetModuleFileName(NULL, ku::sModulePath, KU_MAX_PATH);
-				LPCTSTR sProcessName = PathFindFileName(ku::sModulePath);
+#endif
+				GetModuleFileName(NULL, ku::sModulePath.GetBufferSetLength(KU_MAX_PATH), KU_MAX_PATH);
+				ku::sModulePath.ReleaseBuffer();
+				LPCTSTR sProcessName = _tcsrchr(ku::sModulePath, _T('\\'));
 				if (!sProcessName)
 					return FALSE;
+				sProcessName++;
 				int i;
 				for (i = 0;ku::sBlackList[i];i++)
 					if (!_tcsicmp(sProcessName, ku::sBlackList[i]))
 						return FALSE;
 
 				ku::hModule = hModule;
-				GetModuleFileName(hModule, ku::sModulePath, KU_MAX_PATH);
+				GetModuleFileName(hModule, ku::sModulePath.GetBufferSetLength(KU_MAX_PATH), KU_MAX_PATH);
+				ku::sModulePath.ReleaseBuffer();
 				dll::Init();
 				ku::SysVer.m_dwVersion = GetVersion();
 #ifndef _WIN64
-				if (dll::IsWow64Process)
-					if (!dll::IsWow64Process(GetCurrentProcess(), &ku::bIsWow64))
-						ku::bIsWow64 = FALSE;
+				if (dll::IsWow64Process && !dll::IsWow64Process(GetCurrentProcess(), &ku::bIsWow64))
+					ku::bIsWow64 = FALSE;
 #endif
 			}
 			break;
@@ -54,69 +99,39 @@ BOOL APIENTRY DllMain( HMODULE hModule,
 	return TRUE;
 }
 
-STDAPI DllRegisterServer(void)
+STDAPI DllRegisterServer()
 {
-	HKEY hKey;
-	HRESULT ret = S_OK;
-
-	if (RegCreateKeyEx(HKEY_CURRENT_USER, _T("Software\\Classes\\*\\shellex\\ContextMenuHandlers\\") KU_SHELL_EXTENSION_STR,
-		0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKey, NULL) != ERROR_SUCCESS)
+	if (!InitConfig())
 		return SELFREG_E_CLASS;
-	if (RegSetValueEx(hKey, NULL, 0, REG_SZ, (const BYTE *) CLSID_KU_CONTEXT_MENU_STR, ARRSIZE(CLSID_KU_CONTEXT_MENU_STR) * sizeof(TCHAR)) != ERROR_SUCCESS)
-		ret = SELFREG_E_CLASS;
-	RegCloseKey(hKey);
 
-	if (RegCreateKeyEx(HKEY_CURRENT_USER, _T("Software\\Classes\\Directory\\shellex\\ContextMenuHandlers\\") KU_SHELL_EXTENSION_STR,
-		0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKey, NULL) != ERROR_SUCCESS)
+	DWORD dwNameCcb = (g_sName.GetLength() + 1) * sizeof(TCHAR);
+	DWORD dwClsidCcb = (g_sCLSID.GetLength() + 1) * sizeof(TCHAR);
+
+	if (SHSetValue(HKEY_CURRENT_USER, _T("Software\\Classes\\*\\shellex\\ContextMenuHandlers\\") + g_sName, NULL, REG_SZ, (LPCVOID) g_sCLSID.GetString(), dwClsidCcb) != ERROR_SUCCESS ||
+		SHSetValue(HKEY_CURRENT_USER, _T("Software\\Classes\\Directory\\shellex\\ContextMenuHandlers\\") + g_sName, NULL, REG_SZ, (LPCVOID) g_sCLSID.GetString(), dwClsidCcb) != ERROR_SUCCESS ||
+		SHSetValue(HKEY_CURRENT_USER, _T("Software\\Classes\\Directory\\Background\\shellex\\ContextMenuHandlers\\") + g_sName, NULL, REG_SZ, (LPCVOID) g_sCLSID.GetString(), dwClsidCcb) != ERROR_SUCCESS ||
+		SHSetValue(HKEY_CURRENT_USER, _T("Software\\Classes\\Drive\\shellex\\ContextMenuHandlers\\") + g_sName, NULL, REG_SZ, (LPCVOID) g_sCLSID.GetString(), dwClsidCcb) != ERROR_SUCCESS ||
+		SHSetValue(HKEY_CURRENT_USER, _T("Software\\Classes\\CLSID\\") + g_sCLSID, NULL, REG_SZ, (LPCVOID) g_sName.GetString(), dwNameCcb) != ERROR_SUCCESS ||
+		SHSetValue(HKEY_CURRENT_USER, _T("Software\\Classes\\CLSID\\") + g_sCLSID + _T("\\InProcServer32"), NULL, REG_SZ, (LPCVOID) ku::sModulePath, (DWORD) (ku::sModulePath.GetLength() + 1) * sizeof(TCHAR)) != ERROR_SUCCESS ||
+		SHSetValue(HKEY_CURRENT_USER, _T("Software\\Classes\\CLSID\\") + g_sCLSID + _T("\\InProcServer32"), _T("ThreadingModel"), REG_SZ, (LPCVOID) _T("Apartment"), sizeof(_T("Apartment"))) != ERROR_SUCCESS ||
+		SHSetValue(HKEY_LOCAL_MACHINE, _T("Software\\Microsoft\\Windows\\CurrentVersion\\Shell Extensions\\Approved"), g_sCLSID, REG_SZ, (LPCVOID) g_sName.GetString(), dwNameCcb) != ERROR_SUCCESS)
 		return SELFREG_E_CLASS;
-	if (RegSetValueEx(hKey, NULL, 0, REG_SZ, (const BYTE *) CLSID_KU_CONTEXT_MENU_STR, ARRSIZE(CLSID_KU_CONTEXT_MENU_STR) * sizeof(TCHAR)) != ERROR_SUCCESS)
-		ret = SELFREG_E_CLASS;
-	RegCloseKey(hKey);
-
-	if (RegCreateKeyEx(HKEY_CURRENT_USER, _T("Software\\Classes\\Directory\\Background\\shellex\\ContextMenuHandlers\\") KU_SHELL_EXTENSION_STR,
-		0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKey, NULL) != ERROR_SUCCESS)
-		return SELFREG_E_CLASS;
-	if (RegSetValueEx(hKey, NULL, 0, REG_SZ, (const BYTE *) CLSID_KU_CONTEXT_MENU_STR, ARRSIZE(CLSID_KU_CONTEXT_MENU_STR) * sizeof(TCHAR)) != ERROR_SUCCESS)
-		ret = SELFREG_E_CLASS;
-	RegCloseKey(hKey);
-
-	if (RegCreateKeyEx(HKEY_CURRENT_USER, _T("Software\\Classes\\Drive\\shellex\\ContextMenuHandlers\\") KU_SHELL_EXTENSION_STR,
-		0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKey, NULL) != ERROR_SUCCESS)
-		return SELFREG_E_CLASS;
-	if (RegSetValueEx(hKey, NULL, 0, REG_SZ, (const BYTE *) CLSID_KU_CONTEXT_MENU_STR, ARRSIZE(CLSID_KU_CONTEXT_MENU_STR) * sizeof(TCHAR)) != ERROR_SUCCESS)
-		ret = SELFREG_E_CLASS;
-	RegCloseKey(hKey);
-
-	if (RegCreateKeyEx(HKEY_CURRENT_USER, _T("Software\\Classes\\CLSID\\") CLSID_KU_CONTEXT_MENU_STR,
-		0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKey, NULL) != ERROR_SUCCESS)
-		return SELFREG_E_CLASS;
-	if (RegSetValueEx(hKey, NULL, 0, REG_SZ, (const BYTE *) KU_SHELL_EXTENSION_STR, ARRSIZE(KU_SHELL_EXTENSION_STR) * sizeof(TCHAR)) != ERROR_SUCCESS)
-			ret = SELFREG_E_CLASS;
-	RegCloseKey(hKey);
-
-	if (RegCreateKeyEx(HKEY_CURRENT_USER, _T("Software\\Classes\\CLSID\\") CLSID_KU_CONTEXT_MENU_STR _T("\\InProcServer32"),
-		0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKey, NULL) != ERROR_SUCCESS)
-		return SELFREG_E_CLASS;
-	else if (RegSetValueEx(hKey, NULL, 0, REG_SZ, (const BYTE *) ku::sModulePath, (DWORD) _tcslen(ku::sModulePath) * sizeof(TCHAR)) != ERROR_SUCCESS ||
-		RegSetValueEx(hKey, _T("ThreadingModel"), 0, REG_SZ, (const BYTE *) _T("Apartment"), ARRSIZE(_T("Apartment")) * sizeof(TCHAR)) != ERROR_SUCCESS)
-			ret = SELFREG_E_CLASS;
-	RegCloseKey(hKey);
-
-	if (RegCreateKeyEx(HKEY_LOCAL_MACHINE, _T("Software\\Microsoft\\Windows\\CurrentVersion\\Shell Extensions\\Approved"),
-		0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hKey, NULL) == ERROR_SUCCESS)
-		RegSetValueEx(hKey, CLSID_KU_CONTEXT_MENU_STR, 0, REG_SZ, (const BYTE *) KU_SHELL_EXTENSION_STR, ARRSIZE(KU_SHELL_EXTENSION_STR) * sizeof(TCHAR));
 
 	SHChangeNotify(SHCNE_ASSOCCHANGED, SHCNF_IDLIST, NULL, NULL);
-	return ret;
+	return S_OK;
 }
 
-STDAPI DllUnregisterServer(void)
+STDAPI DllUnregisterServer()
 {
-	if (SHDeleteKey(HKEY_CURRENT_USER, _T("Software\\Classes\\*\\shellex\\ContextMenuHandlers\\") KU_SHELL_EXTENSION_STR) != ERROR_SUCCESS ||
-		SHDeleteKey(HKEY_CURRENT_USER, _T("Software\\Classes\\Directory\\shellex\\ContextMenuHandlers\\") KU_SHELL_EXTENSION_STR) != ERROR_SUCCESS ||
-		SHDeleteKey(HKEY_CURRENT_USER, _T("Software\\Classes\\Directory\\Background\\shellex\\ContextMenuHandlers\\") KU_SHELL_EXTENSION_STR) != ERROR_SUCCESS ||
-		SHDeleteKey(HKEY_CURRENT_USER, _T("Software\\Classes\\Drive\\shellex\\ContextMenuHandlers\\") KU_SHELL_EXTENSION_STR) != ERROR_SUCCESS ||
-		SHDeleteKey(HKEY_CURRENT_USER, _T("Software\\Classes\\CLSID\\") CLSID_KU_CONTEXT_MENU_STR) != ERROR_SUCCESS)
+	if (!InitConfig())
+		return SELFREG_E_CLASS;
+
+	if (SHDeleteKey(HKEY_CURRENT_USER, _T("Software\\Classes\\*\\shellex\\ContextMenuHandlers\\") + g_sName) != ERROR_SUCCESS ||
+		SHDeleteKey(HKEY_CURRENT_USER, _T("Software\\Classes\\Directory\\shellex\\ContextMenuHandlers\\") + g_sName) != ERROR_SUCCESS ||
+		SHDeleteKey(HKEY_CURRENT_USER, _T("Software\\Classes\\Directory\\Background\\shellex\\ContextMenuHandlers\\") + g_sName) != ERROR_SUCCESS ||
+		SHDeleteKey(HKEY_CURRENT_USER, _T("Software\\Classes\\Drive\\shellex\\ContextMenuHandlers\\") + g_sName) != ERROR_SUCCESS ||
+		SHDeleteKey(HKEY_CURRENT_USER, _T("Software\\Classes\\CLSID\\") + g_sCLSID) != ERROR_SUCCESS ||
+		SHDeleteValue(HKEY_LOCAL_MACHINE, _T("Software\\Microsoft\\Windows\\CurrentVersion\\Shell Extensions\\Approved"), g_sCLSID) != ERROR_SUCCESS)
 		return SELFREG_E_CLASS;
 
 	SHChangeNotify(SHCNE_ASSOCCHANGED, SHCNF_IDLIST, NULL, NULL);
@@ -125,10 +140,12 @@ STDAPI DllUnregisterServer(void)
 
 STDAPI DllGetClassObject(REFCLSID rclsid, REFIID riid, LPVOID * ppv)
 {
+	InitConfig();
+
     IUnknown *pResult = 0;
 
-    if (rclsid == CLSID_KU_CONTEXT_MENU)
-        pResult = (IUnknown *)(IClassFactory *) new CKuContextMenuFactory;
+    if (rclsid == g_CLSID)
+        pResult = (IUnknown *)(IClassFactory *) new CKuShellExtensionFactory;
     else
         return CLASS_E_CLASSNOTAVAILABLE;
 

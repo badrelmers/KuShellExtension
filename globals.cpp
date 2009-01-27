@@ -7,7 +7,7 @@ ULONG CUnknown::g_uRefCount = 0;
 namespace ku {
 
 HMODULE hModule = NULL;
-TCHAR sModulePath[KU_MAX_PATH];
+CString sModulePath;
 TCHAR *sBlackList[] = {_T("utorrent.exe"), NULL};
 
 #ifndef _WIN64
