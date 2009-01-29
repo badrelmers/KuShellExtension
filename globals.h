@@ -1,5 +1,9 @@
 #pragma once
 
+#ifndef HAVE_ATL
+#include "KuString.h"
+#endif
+
 typedef union {
 	DWORD m_dwVersion;
 	struct {
@@ -16,11 +20,12 @@ namespace ku {
 extern BOOL bIsWow64;
 #endif
 
-#define SYMBOLIC_LINK_FLAG_DIRECTORY (0x1)
-
 extern HMODULE hModule;
 extern CString sModulePath;
 extern TCHAR *sBlackList[];
 extern SYSVER SysVer;
+
+extern Gdiplus::GdiplusStartupInput gdiplusStartupInput;
+extern ULONG_PTR gdiplusToken;
 
 }

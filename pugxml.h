@@ -32,6 +32,12 @@
 #	include <assert.h>
 #endif
 
+#ifndef max
+#define max(a,b)            (((a) > (b)) ? (a) : (b))
+#endif
+#ifndef min
+#define min(a,b)            (((a) < (b)) ? (a) : (b))
+#endif
 
 #ifndef HIWORD
 #	define HIWORD(X) ((unsigned short)((unsigned long)(X)>>16))
@@ -1814,7 +1820,7 @@ inline static void outer_xml(std::basic_ostream<TCHAR,std::char_traits<TCHAR> > 
 //<summary>Abstract iterator class for interating over a node's members.</summary>
 //<remarks>Used as base class for 'xml_node_iterator' and 'xml_attribute_iterator'.</remarks>
 template <class _Ty,class _Diff,class _Pointer,class _Reference>
-class xml_iterator : public std::_Ranit<_Ty,_Diff,_Pointer,_Reference>
+class xml_iterator : public std::iterator<_Ty,_Diff,_Pointer,_Reference>
 {
 protected:
 	xml_node_struct* _vref; //A pointer to the node over which to iterate.
@@ -3864,6 +3870,7 @@ public:
 public:
 	xml_node at(long i){ return xml_node((xml_node_struct*)pointer_array::at((unsigned int)i)); } //Access xml_node at subscript.
 	xml_node operator[](long i){ return xml_node((xml_node_struct*)pointer_array::at((unsigned int)i)); } //Access xml_node at subscript.
+#ifdef _MSC_VER
 	friend std::ostream& operator<<(std::ostream& os,xml_node_list& list) //Output helper.
 	{
 		if(!os.good()) return os;
@@ -3871,6 +3878,7 @@ public:
 		for(unsigned int i=0; i<n; ++i) os << list[i];
 		return os;
 	}
+#endif
 };
 
 

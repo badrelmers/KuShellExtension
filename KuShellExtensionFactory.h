@@ -6,8 +6,8 @@ class CKuShellExtensionFactory : public IClassFactory
 {
 	IMPLEMENT_INTERFACE
 public:
-	CKuShellExtensionFactory();
-	virtual ~CKuShellExtensionFactory();
+	CKuShellExtensionFactory() {}
+	virtual ~CKuShellExtensionFactory() {}
 
 	// IClassFactory
 	virtual /* [local] */ HRESULT STDMETHODCALLTYPE CreateInstance( 

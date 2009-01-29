@@ -23,8 +23,71 @@ CLSID g_CLSID =
 CString g_sName;
 CString g_sCLSID;
 
+void RedirectIOToConsole()
+{
+	HANDLE hConHandle;
+	int iStdHandle;
+	CONSOLE_SCREEN_BUFFER_INFO coninfo;
+
+	FILE *fp;
+
+	// allocate a console for this app
+	AllocConsole();
+
+	// set the screen buffer to be big enough to let us scroll text
+	GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE),
+		&coninfo);
+
+	// maximum lines
+	coninfo.dwSize.Y = 2000;
+	SetConsoleScreenBufferSize(GetStdHandle(STD_OUTPUT_HANDLE),
+		coninfo.dwSize);
+
+	// redirect unbuffered STDOUT to the console
+	hConHandle = GetStdHandle(STD_OUTPUT_HANDLE);
+	iStdHandle = _open_osfhandle((intptr_t) hConHandle, _O_TEXT);
+	fp = _fdopen( iStdHandle, "w" );
+	*stdout = *fp;
+	setvbuf( stdout, NULL, _IONBF, 0 );
+
+	// redirect unbuffered STDIN to the console
+	hConHandle = GetStdHandle(STD_INPUT_HANDLE);
+	iStdHandle = _open_osfhandle((intptr_t) hConHandle, _O_TEXT);
+	fp = _fdopen( iStdHandle, "r" );
+	*stdin = *fp;
+	setvbuf( stdin, NULL, _IONBF, 0 );
+
+	// redirect unbuffered STDERR to the console
+	hConHandle = GetStdHandle(STD_ERROR_HANDLE);
+	iStdHandle = _open_osfhandle((intptr_t) hConHandle, _O_TEXT);
+	fp = _fdopen( iStdHandle, "w" );
+	*stderr = *fp;
+	setvbuf( stderr, NULL, _IONBF, 0 );
+
+	// make cout, wcout, cin, wcin, wcerr, cerr, wclog and clog
+	// point to console as well
+#ifdef _IOSTREAM_
+	std::ios::sync_with_stdio();
+#endif
+}
+
 bool InitConfig()
 {
+	static bool bInit = false;
+	if (bInit)
+		return true;
+
+#ifdef _DEBUG
+	RedirectIOToConsole();
+#endif
+
+	bInit = true;
+	dll::Init();
+#ifndef _WIN64
+	if (dll::IsWow64Process && !dll::IsWow64Process(GetCurrentProcess(), &ku::bIsWow64))
+		ku::bIsWow64 = FALSE;
+#endif
+
 	CKuContextMenu::LoadConfig();
 	if (CKuContextMenu::m_menu.GetOurVariable(CLSID_CONFIG, g_sCLSID)) {
 		if (g_sCLSID.GetLength() != 38)
@@ -50,12 +113,12 @@ bool InitConfig()
 		g_sCLSID.Format(_T("{%08X-%04X-%04X-%02X%02X-%02X%02X%02X%02X%02X%02X}"), g_CLSID.Data1, g_CLSID.Data2, g_CLSID.Data3,
 			g_CLSID.Data4[0], g_CLSID.Data4[1], g_CLSID.Data4[2], g_CLSID.Data4[3], g_CLSID.Data4[4], g_CLSID.Data4[5], g_CLSID.Data4[6], g_CLSID.Data4[7]);
 
-	g_sName.Format(_T("!!KuShellExtension-%s"), g_sCLSID);
+	g_sName.Format(_T("!!KuShellExtension-%s"), g_sCLSID.GetString());
 
 	return true;
 }
 
-BOOL APIENTRY DllMain( HMODULE hModule,
+EXTERN_C BOOL APIENTRY DllMain( HMODULE hModule,
                        DWORD  ul_reason_for_call,
                        LPVOID lpReserved
 					 )
@@ -81,12 +144,7 @@ BOOL APIENTRY DllMain( HMODULE hModule,
 				ku::hModule = hModule;
 				GetModuleFileName(hModule, ku::sModulePath.GetBufferSetLength(KU_MAX_PATH), KU_MAX_PATH);
 				ku::sModulePath.ReleaseBuffer();
-				dll::Init();
 				ku::SysVer.m_dwVersion = GetVersion();
-#ifndef _WIN64
-				if (dll::IsWow64Process && !dll::IsWow64Process(GetCurrentProcess(), &ku::bIsWow64))
-					ku::bIsWow64 = FALSE;
-#endif
 			}
 			break;
 		case DLL_THREAD_ATTACH:
@@ -112,7 +170,7 @@ STDAPI DllRegisterServer()
 		SHSetValue(HKEY_CURRENT_USER, _T("Software\\Classes\\Directory\\Background\\shellex\\ContextMenuHandlers\\") + g_sName, NULL, REG_SZ, (LPCVOID) g_sCLSID.GetString(), dwClsidCcb) != ERROR_SUCCESS ||
 		SHSetValue(HKEY_CURRENT_USER, _T("Software\\Classes\\Drive\\shellex\\ContextMenuHandlers\\") + g_sName, NULL, REG_SZ, (LPCVOID) g_sCLSID.GetString(), dwClsidCcb) != ERROR_SUCCESS ||
 		SHSetValue(HKEY_CURRENT_USER, _T("Software\\Classes\\CLSID\\") + g_sCLSID, NULL, REG_SZ, (LPCVOID) g_sName.GetString(), dwNameCcb) != ERROR_SUCCESS ||
-		SHSetValue(HKEY_CURRENT_USER, _T("Software\\Classes\\CLSID\\") + g_sCLSID + _T("\\InProcServer32"), NULL, REG_SZ, (LPCVOID) ku::sModulePath, (DWORD) (ku::sModulePath.GetLength() + 1) * sizeof(TCHAR)) != ERROR_SUCCESS ||
+		SHSetValue(HKEY_CURRENT_USER, _T("Software\\Classes\\CLSID\\") + g_sCLSID + _T("\\InProcServer32"), NULL, REG_SZ, (LPCVOID) ku::sModulePath.GetString(), (DWORD) (ku::sModulePath.GetLength() + 1) * sizeof(TCHAR)) != ERROR_SUCCESS ||
 		SHSetValue(HKEY_CURRENT_USER, _T("Software\\Classes\\CLSID\\") + g_sCLSID + _T("\\InProcServer32"), _T("ThreadingModel"), REG_SZ, (LPCVOID) _T("Apartment"), sizeof(_T("Apartment"))) != ERROR_SUCCESS ||
 		SHSetValue(HKEY_LOCAL_MACHINE, _T("Software\\Microsoft\\Windows\\CurrentVersion\\Shell Extensions\\Approved"), g_sCLSID, REG_SZ, (LPCVOID) g_sName.GetString(), dwNameCcb) != ERROR_SUCCESS)
 		return SELFREG_E_CLASS;
@@ -142,19 +200,19 @@ STDAPI DllGetClassObject(REFCLSID rclsid, REFIID riid, LPVOID * ppv)
 {
 	InitConfig();
 
-    IUnknown *pResult = 0;
+    IUnknown *pObj = NULL;
 
     if (rclsid == g_CLSID)
-        pResult = (IUnknown *)(IClassFactory *) new CKuShellExtensionFactory;
+        pObj = new CKuShellExtensionFactory;
     else
         return CLASS_E_CLASSNOTAVAILABLE;
 
-    if (pResult) {
-        if(SUCCEEDED(pResult->QueryInterface(riid, ppv)))
+    if (pObj) {
+        if(SUCCEEDED(pObj->QueryInterface(riid, ppv)))
             // Release extra refcount from QueryInterface
-            pResult->Release();
+			pObj->Release();
         else {
-            delete pResult;
+            delete pObj;
             return E_UNEXPECTED;
         }
     }
@@ -164,11 +222,16 @@ STDAPI DllGetClassObject(REFCLSID rclsid, REFIID riid, LPVOID * ppv)
 	return S_OK;
 }
 
-STDAPI DllCanUnloadNow(void)
+STDAPI DllCanUnloadNow()
 {
 	ULONG uZero = 0;
 	InterlockedExchange((LONG *) &uZero, CUnknown::g_uRefCount);
-	if (uZero == 0)
+	if (uZero == 0) {
+		if (dll::GdiplusShutdown && ku::gdiplusToken) {
+			dll::GdiplusShutdown(ku::gdiplusToken);
+			ku::gdiplusToken = 0;
+		}
 		return S_OK;
+	}
 	return S_FALSE;
 }

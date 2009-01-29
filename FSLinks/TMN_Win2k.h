@@ -4,19 +4,19 @@
 #if !defined(TMN_WIN2K_H)
 #define TMN_WIN2K_H
 
-#define WIN32_LEAN_AND_MEAN
-#define _WIN32_WINNT 0x500
-#define NOMCX
-#define NOIME
-#define NOSERVICE
-#define NOGDI
-#define NOUSER
-#define NOHELP
-#define NOSYSPARAMSINFO
-#define NOWINABLE
-
-#include <windows.h>
-#include <winioctl.h>
+//#define WIN32_LEAN_AND_MEAN
+//#define _WIN32_WINNT 0x500
+//#define NOMCX
+//#define NOIME
+//#define NOSERVICE
+//#define NOGDI
+//#define NOUSER
+//#define NOHELP
+//#define NOSYSPARAMSINFO
+//#define NOWINABLE
+//
+//#include <windows.h>
+//#include <winioctl.h>
 
 #if defined(__cplusplus)
 extern "C" {

@@ -1,68 +1,31 @@
 #include "StdAfx.h"
 #include "KuContextMenu.h"
+#include "dll.h"
 #include "globals.h"
 
 //////////////////////////////////////////////////////////////////////////////////////
-// CKuContextMenu
+// CKuContextMenu::CShellExtInit
 //////////////////////////////////////////////////////////////////////////////////////
 
-CKuMenuSet CKuContextMenu::m_menu;
-CString CKuContextMenu::m_sConfigFile;
-BY_HANDLE_FILE_INFORMATION CKuContextMenu::m_cfgFileInfo = {0};
-UINT CKuContextMenu::m_idCmdFirst = 0;
-ULONG CKuContextMenu::m_uInstances = 0;
-#ifdef GDIPVER
-Gdiplus::GdiplusStartupInput CKuContextMenu::m_gdiplusStartupInput;
-ULONG_PTR CKuContextMenu::m_gdiplusToken = 0;
-#endif
-
-CKuContextMenu::CKuContextMenu()
-{
-	ULONG uInstances = (ULONG) InterlockedIncrement((LONG *) &m_uInstances);
-#ifdef GDIPVER
-	if (uInstances == 1 && ku::SysVer.m_vMajor >= 6)
-		Gdiplus::GdiplusStartup(&m_gdiplusToken, &m_gdiplusStartupInput, NULL);
-#endif
-}
-
-CKuContextMenu::~CKuContextMenu()
-{
-	ULONG uInstances = (ULONG) InterlockedDecrement((LONG *) &m_uInstances);
-#ifdef GDIPVER
-	if (uInstances == 0 && m_gdiplusToken) {
-		Gdiplus::GdiplusShutdown(m_gdiplusToken);
-		m_gdiplusToken = 0;
-	}
-#endif
-}
-
-HRESULT STDMETHODCALLTYPE CKuContextMenu::QueryInterface( 
+HRESULT STDMETHODCALLTYPE CKuContextMenu::CShellExtInit::QueryInterface( 
 	/* [in] */ REFIID riid,
 	/* [iid_is][out] */ __RPC__deref_out void __RPC_FAR *__RPC_FAR *ppvObject)
 {
-	if (riid == IID_IShellExtInit)
-		*ppvObject = (void *)(IShellExtInit *) this;
-	else if (riid == IID_IContextMenu3)
-		*ppvObject = (void *)(IContextMenu3 *) this;
-	else if (riid == IID_IContextMenu2)
-		*ppvObject = (void *)(IContextMenu2 *) this;
-	else if (riid == IID_IContextMenu)
-		*ppvObject = (void *)(IContextMenu *) this;
-	else if (riid == IID_IUnknown)
-		*ppvObject = (void *)(IUnknown *)(IContextMenu *) this;
+	if (riid == IID_IShellExtInit || riid == IID_IUnknown)
+		*ppvObject = this;
 	else
 		return E_NOINTERFACE;
 	AddRef();
 	return S_OK;
 }
 
-HRESULT STDMETHODCALLTYPE CKuContextMenu::Initialize( 
+HRESULT STDMETHODCALLTYPE CKuContextMenu::CShellExtInit::Initialize( 
     /* [unique][in] */ 
-    __in_opt  PCIDLIST_ABSOLUTE pidlFolder,
+    PCIDLIST_ABSOLUTE pidlFolder,
     /* [unique][in] */ 
-    __in_opt  IDataObject *pdtobj,
+    IDataObject *pdtobj,
     /* [unique][in] */ 
-    __in_opt  HKEY hkeyProgID)
+    HKEY hkeyProgID)
 {
 	m_menu.m_aFiles.RemoveAll();
 
@@ -102,6 +65,31 @@ HRESULT STDMETHODCALLTYPE CKuContextMenu::Initialize(
 	return S_OK;
 }
 
+//////////////////////////////////////////////////////////////////////////////////////
+// CKuContextMenu
+//////////////////////////////////////////////////////////////////////////////////////
+
+CKuMenuSet CKuContextMenu::m_menu;
+CString CKuContextMenu::m_sConfigFile;
+BY_HANDLE_FILE_INFORMATION CKuContextMenu::m_cfgFileInfo = {0};
+UINT CKuContextMenu::m_idCmdFirst = 0;
+
+HRESULT STDMETHODCALLTYPE CKuContextMenu::QueryInterface( 
+	/* [in] */ REFIID riid,
+	/* [iid_is][out] */ __RPC__deref_out void __RPC_FAR *__RPC_FAR *ppvObject)
+{
+	if (riid == IID_IShellExtInit) {
+		*ppvObject = new CShellExtInit;
+		return S_OK;
+	}
+	else if (riid == IID_IContextMenu3 || riid == IID_IContextMenu2 || riid == IID_IContextMenu || riid == IID_IUnknown)
+		*ppvObject = this;
+	else
+		return E_NOINTERFACE;
+	AddRef();
+	return S_OK;
+}
+
 HRESULT CKuContextMenu::LoadConfig()
 {
 	if (m_sConfigFile.IsEmpty()) {
@@ -130,15 +118,15 @@ HRESULT CKuContextMenu::LoadConfig()
 
 HRESULT STDMETHODCALLTYPE CKuContextMenu::QueryContextMenu( 
 	/* [in] */ 
-	__in  HMENU hMenu,
+	HMENU hMenu,
 	/* [in] */ 
-	__in  UINT indexMenu,
+	UINT indexMenu,
 	/* [in] */ 
-	__in  UINT idCmdFirst,
+	UINT idCmdFirst,
 	/* [in] */ 
-	__in  UINT idCmdLast,
+	UINT idCmdLast,
 	/* [in] */ 
-	__in  UINT uFlags)
+	UINT uFlags)
 {
 	HRESULT hr = LoadConfig();
 	if (hr != S_OK)
@@ -151,15 +139,39 @@ HRESULT STDMETHODCALLTYPE CKuContextMenu::QueryContextMenu(
 	return S_OK;
 }
 
+#ifndef CMIC_MASK_UNICODE
+#include <pshpack8.h>
+typedef struct _CMINVOKECOMMANDINFOEX
+    {
+    DWORD cbSize;
+    DWORD fMask;
+    HWND hwnd;
+    LPCSTR lpVerb;
+    LPCSTR lpParameters;
+    LPCSTR lpDirectory;
+    int nShow;
+    DWORD dwHotKey;
+    HANDLE hIcon;
+    LPCSTR lpTitle;
+    LPCWSTR lpVerbW;
+    LPCWSTR lpParametersW;
+    LPCWSTR lpDirectoryW;
+    LPCWSTR lpTitleW;
+    POINT ptInvoke;
+    } 	CMINVOKECOMMANDINFOEX;
+#include <poppack.h>
+#define CMIC_MASK_UNICODE       SEE_MASK_UNICODE
+#endif
+
 HRESULT STDMETHODCALLTYPE CKuContextMenu::InvokeCommand( 
 	/* [in] */ 
-	__in  CMINVOKECOMMANDINFO *pici)
+	CMINVOKECOMMANDINFO *pici)
 {
 	CMINVOKECOMMANDINFOEX *piciex = (CMINVOKECOMMANDINFOEX *) pici;
 
 	bool bUnicode = pici->cbSize == sizeof(CMINVOKECOMMANDINFOEX) && (pici->fMask & CMIC_MASK_UNICODE);
 
-	// pici->lpVerb == 0 or pici->lpVerbW == 0 are invalid because our ID is start from offset 1
+	// pici->lpVerb == 0 or pici->lpVerbW == 0 are invalid because we offer IDs from offset 1
 	UINT id;
 	if(pici->lpVerb && !HIWORD(pici->lpVerb)) // it seems lpVerb is more reliable than lpVerbW
 		id = LOWORD(pici->lpVerb);
@@ -175,26 +187,26 @@ HRESULT STDMETHODCALLTYPE CKuContextMenu::InvokeCommand(
 
 HRESULT STDMETHODCALLTYPE CKuContextMenu::GetCommandString( 
 	/* [in] */ 
-	__in  UINT_PTR idCmd,
+	UINT_PTR idCmd,
 	/* [in] */ 
-	__in  UINT uType,
+	UINT uType,
 	/* [in] */ 
-	__reserved  UINT *pReserved,
+	UINT *pReserved,
 	/* [out] */ 
-	__out_awcount(!(uType & GCS_UNICODE), cchMax)  LPSTR pszName,
+	LPSTR pszName,
 	/* [in] */ 
-	__in  UINT cchMax)
+	UINT cchMax)
 {
 	// stores menu ID in the buffer for verb.
 	switch (uType) {
 		case GCS_VERBA:
 			if ((cchMax * sizeof(char)) < sizeof(WORD))
-				return E_INVALIDARG;
+				return E_OUTOFMEMORY;
 			*((WORD *) pszName) = idCmd & 0xFFFF;
 			break;
 		case GCS_VERBW:
 			if ((cchMax * sizeof(wchar_t)) < sizeof(WORD))
-				return E_INVALIDARG;
+				return E_OUTOFMEMORY;
 			*((WORD *) pszName) = idCmd & 0xFFFF;
 			break;
 	}
@@ -203,11 +215,11 @@ HRESULT STDMETHODCALLTYPE CKuContextMenu::GetCommandString(
 
 HRESULT STDMETHODCALLTYPE CKuContextMenu::HandleMenuMsg( 
 	/* [in] */ 
-	__in  UINT uMsg,
+	UINT uMsg,
 	/* [in] */ 
-	__in  WPARAM wParam,
+	WPARAM wParam,
 	/* [in] */ 
-	__in  LPARAM lParam)
+	LPARAM lParam)
 {
 	return HandleMenuMsg2(uMsg, wParam, lParam, NULL);
 }
@@ -217,13 +229,13 @@ HRESULT STDMETHODCALLTYPE CKuContextMenu::HandleMenuMsg(
 */
 HRESULT STDMETHODCALLTYPE CKuContextMenu::HandleMenuMsg2( 
 	/* [in] */ 
-	__in  UINT uMsg,
+	UINT uMsg,
 	/* [in] */ 
-	__in  WPARAM wParam,
+	WPARAM wParam,
 	/* [in] */ 
-	__in  LPARAM lParam,
+	LPARAM lParam,
 	/* [out] */ 
-	__out_opt  LRESULT *pResult)
+	LRESULT *pResult)
 {
 	LRESULT res;
 	if (pResult == NULL)
@@ -371,10 +383,17 @@ HBITMAP CKuContextMenu::IconToBitmap(HICON hIcon, int cx, int cy)
 	DeleteDC(hdcDest);
 
 	// this works in most cases, but generates ugly images for icon contains alpha channel and depend on GDI+
-	if (!bIs32Bpp) {
-		DeleteObject(hBmp);
-		Gdiplus::Bitmap icon(hIcon);
-		icon.GetHBITMAP(Gdiplus::Color::Transparent, &hBmp);
+	if (!bIs32Bpp && dll::GdipCreateBitmapFromHICON) {
+		if (dll::GdiplusStartup && !ku::gdiplusToken)
+			dll::GdiplusStartup(&ku::gdiplusToken, &ku::gdiplusStartupInput, NULL);
+		if (ku::gdiplusToken) {
+			DeleteObject(hBmp);
+			Gdiplus::GpBitmap *pBitmap = NULL;
+			if (dll::GdipCreateBitmapFromHICON(hIcon, &pBitmap) == Gdiplus::Ok) {
+				dll::GdipCreateHBITMAPFromBitmap(pBitmap, &hBmp, Gdiplus::Color::Transparent);
+				dll::GdipDisposeImage((Gdiplus::GpImage *) pBitmap);
+			}
+		}
 	}
 #endif
 	return hBmp;

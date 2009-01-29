@@ -16,5 +16,7 @@ BOOL bIsWow64 = FALSE;
 
 SYSVER SysVer = {0};
 
+Gdiplus::GdiplusStartupInput gdiplusStartupInput;
+ULONG_PTR gdiplusToken = 0;
 
 }

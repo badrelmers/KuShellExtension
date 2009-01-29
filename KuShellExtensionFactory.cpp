@@ -5,22 +5,12 @@
 //////////////////////////////////////////////////////////////////////////////////////
 // CKuShellExtensionFactory
 //////////////////////////////////////////////////////////////////////////////////////
-CKuShellExtensionFactory::CKuShellExtensionFactory()
-{
-}
-
-CKuShellExtensionFactory::~CKuShellExtensionFactory()
-{
-}
-
 HRESULT STDMETHODCALLTYPE CKuShellExtensionFactory::QueryInterface( 
 	/* [in] */ REFIID riid,
 	/* [iid_is][out] */ void __RPC_FAR *__RPC_FAR *ppvObject)
 {
-	if (riid == IID_IClassFactory)
-		*ppvObject = (void *)(IClassFactory *) this;
-	else if (riid == IID_IUnknown)
-		*ppvObject = (void *)(IUnknown *) this;
+	if (riid == IID_IClassFactory || riid == IID_IUnknown)
+		*ppvObject = this;
 	else
 		return E_NOINTERFACE;
 	AddRef();
@@ -35,27 +25,28 @@ HRESULT STDMETHODCALLTYPE CKuShellExtensionFactory::CreateInstance(
     if (pUnkOuter)
         return CLASS_E_NOAGGREGATION;
 
-	CKuContextMenu *pKCM;
+	IUnknown *pObj = NULL;
 
-	try {
-		pKCM = new CKuContextMenu;
-	} catch (...) {
-		return E_OUTOFMEMORY;
+	if (riid == IID_IContextMenu3 || riid == IID_IContextMenu2 || riid == IID_IContextMenu) {
+		try {
+			pObj = reinterpret_cast<IUnknown *>(new CKuContextMenu);
+		} catch (...) { return E_OUTOFMEMORY; }
 	}
+    else
+        return CLASS_E_CLASSNOTAVAILABLE;
 
-	if (pKCM) {
-		if (SUCCEEDED(pKCM->QueryInterface(riid, ppvObject))) {
+	if (pObj) {
+		if (SUCCEEDED(pObj->QueryInterface(riid, ppvObject))) {
 			// Release extra refcount from QueryInterface
-			pKCM->Release();
+			pObj->Release();
 		}
 		else {
-			delete pKCM;
+			delete pObj;
 			return E_UNEXPECTED;
 		}
 	}
 	else
 		return E_OUTOFMEMORY;
-
 
     return S_OK;
 }
@@ -73,4 +64,3 @@ HRESULT STDMETHODCALLTYPE CKuShellExtensionFactory::LockServer(
 	}
 	return S_OK;
 }
-

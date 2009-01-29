@@ -1,5 +1,21 @@
 #pragma once
 
+#ifndef HAVE_ATL
+#include "KuString.h"
+#if defined(_MSC_VER) && defined(_DEBUG)
+	#pragma push_macro("new")
+	#undef new
+#endif
+#include "KuATL.h"
+#if defined(_MSC_VER) && defined(_DEBUG)
+	#pragma pop_macro("new")
+#endif
+#endif
+
+namespace pug {
+	class xml_node;
+}
+
 class CKuMenuSet
 {
 	friend class CMenuItem;

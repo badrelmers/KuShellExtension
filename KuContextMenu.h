@@ -3,70 +3,82 @@
 #include "CUnknown.h"
 #include "KuMenuSet.h"
 
-class CKuContextMenu : public IShellExtInit, public IContextMenu3
+#ifndef PCIDLIST_ABSOLUTE
+#define PCIDLIST_ABSOLUTE LPCITEMIDLIST
+#endif
+
+class CKuContextMenu : public IContextMenu3
 {
 	IMPLEMENT_INTERFACE
-public:
-	CKuContextMenu();
-	virtual ~CKuContextMenu();
 
-	// IShellExtInit
-    virtual HRESULT STDMETHODCALLTYPE Initialize( 
-        /* [unique][in] */ 
-        __in_opt  PCIDLIST_ABSOLUTE pidlFolder,
-        /* [unique][in] */ 
-        __in_opt  IDataObject *pdtobj,
-        /* [unique][in] */ 
-        __in_opt  HKEY hkeyProgID);
+	class CShellExtInit : public IShellExtInit
+	{
+	IMPLEMENT_INTERFACE
+	public:
+		CShellExtInit() {}
+		virtual ~CShellExtInit() {}
+
+		// IShellExtInit
+		virtual HRESULT STDMETHODCALLTYPE Initialize( 
+			/* [unique][in] */ 
+			PCIDLIST_ABSOLUTE pidlFolder,
+			/* [unique][in] */ 
+			IDataObject *pdtobj,
+			/* [unique][in] */ 
+			HKEY hkeyProgID);
+	};
+public:
+	CKuContextMenu() {}
+	virtual ~CKuContextMenu() {}
 
 	// IContextMenu
 	virtual HRESULT STDMETHODCALLTYPE QueryContextMenu( 
 		/* [in] */ 
-		__in  HMENU hMenu,
+		HMENU hMenu,
 		/* [in] */ 
-		__in  UINT indexMenu,
+		UINT indexMenu,
 		/* [in] */ 
-		__in  UINT idCmdFirst,
+		UINT idCmdFirst,
 		/* [in] */ 
-		__in  UINT idCmdLast,
+		UINT idCmdLast,
 		/* [in] */ 
-		__in  UINT uFlags);
+		UINT uFlags);
 
 	virtual HRESULT STDMETHODCALLTYPE InvokeCommand( 
 		/* [in] */ 
-		__in  CMINVOKECOMMANDINFO *pici);
+		CMINVOKECOMMANDINFO *pici);
 
 	virtual HRESULT STDMETHODCALLTYPE GetCommandString( 
 		/* [in] */ 
-		__in  UINT_PTR idCmd,
+		UINT_PTR idCmd,
 		/* [in] */ 
-		__in  UINT uType,
+		UINT uType,
 		/* [in] */ 
-		__reserved  UINT *pReserved,
+		UINT *pReserved,
 		/* [out] */ 
-		__out_awcount(!(uType & GCS_UNICODE), cchMax)  LPSTR pszName,
+		LPSTR pszName,
 		/* [in] */ 
-		__in  UINT cchMax);
+		UINT cchMax);
 
 	// IContextMenu2
 	virtual HRESULT STDMETHODCALLTYPE HandleMenuMsg( 
 		/* [in] */ 
-		__in  UINT uMsg,
+		UINT uMsg,
 		/* [in] */ 
-		__in  WPARAM wParam,
+		WPARAM wParam,
 		/* [in] */ 
-		__in  LPARAM lParam);
+		LPARAM lParam);
 
 	// IContextMenu3
 	virtual HRESULT STDMETHODCALLTYPE HandleMenuMsg2( 
 		/* [in] */ 
-		__in  UINT uMsg,
+		UINT uMsg,
 		/* [in] */ 
-		__in  WPARAM wParam,
+		WPARAM wParam,
 		/* [in] */ 
-		__in  LPARAM lParam,
+		LPARAM lParam,
 		/* [out] */ 
-		__out_opt  LRESULT *pResult);
+		LRESULT *pResult);
 
 	static CString m_sConfigFile;
 	static HBITMAP Create32BitBitmap(HDC hdc, int cx, int cy, VOID **ppvBits = NULL);
@@ -77,9 +89,4 @@ public:
 private:
 	static BY_HANDLE_FILE_INFORMATION m_cfgFileInfo;
 	static UINT m_idCmdFirst;
-	static ULONG m_uInstances;
-#ifdef GDIPVER
-	static Gdiplus::GdiplusStartupInput m_gdiplusStartupInput;
-	static ULONG_PTR m_gdiplusToken;
-#endif
 };

@@ -1,5 +1,9 @@
 #pragma once
 
+#ifndef HAVE_ATL
+#include "KuString.h"
+#endif
+
 #ifdef _WIN32
 
 LPCWSTR StringUTF8ToWChar(LPCSTR sUTF8, CStringW &sWChar, int iChars = -1);

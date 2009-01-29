@@ -1,10 +1,19 @@
-#include "StdAfx.h"
+#include "stdafx.h"
 #include "KuMenuSet.h"
 #include "KuContextMenu.h"
 #include "StringConv.h"
 #include "globals.h"
 #include "dll.h"
 #include "FSLinks/FSLinks.h"
+
+#if defined(_MSC_VER) && defined(_DEBUG)
+	#pragma push_macro("new")
+	#undef new
+#endif
+#include "pugxml.h"
+#if defined(_MSC_VER) && defined(_DEBUG)
+	#pragma pop_macro("new")
+#endif
 
 #define PERCENT_EXPANSION_FLAGS		"dpnxs"
 
@@ -73,8 +82,12 @@ bool CKuMenuSet::FromString(LPCTSTR sXML)
 		sXML++;
 
 	pug::xml_parser xml((TCHAR *) sXML);
-	pug::xml_node &doc = xml.document();
-
+#ifdef _MSC_VER
+	pug::xml_node&
+#else
+	pug::xml_node
+#endif
+		doc = xml.document();
 	pug::xml_node_list vars;
 
 	doc = doc.first_element_by_name(_T("config"));
@@ -106,7 +119,13 @@ void CKuMenuSet::PraseMenuItems(pug::xml_node &node, CMenuItem *pItem)
 	ASSERT(pItem);
 	do {
 		if (!_tcsicmp(node.name(), _T("var"))) {
-			pug::xml_attribute &name = node.attribute(_T("name"));
+#ifdef _MSC_VER
+			pug::xml_attribute&
+#else
+			pug::xml_attribute
+#endif
+				name = node.attribute(_T("name"));
+
 			if (!_tcslen(name.value()))
 				continue;
 			CString str;
@@ -117,6 +136,7 @@ void CKuMenuSet::PraseMenuItems(pug::xml_node &node, CMenuItem *pItem)
 				pItem->m_pParent->m_vars.SetAt(Substitute(name, str, pItem), value);
 			else
 				m_vars.SetAt(Substitute(name, str, pItem), value);
+			TRACE(_T("%s=%s\n"), Substitute(name, str, pItem), value.GetString());
 		}
 		else if (!_tcsicmp(node.name(), _T("menu")) || !_tcsicmp(node.name(), _T("menuitem"))) {
 			CString sIcon;
@@ -198,7 +218,12 @@ void CKuMenuSet::PraseMenuItems(pug::xml_node &node, CMenuItem *pItem)
 			if (!_tcsicmp(node.name(), _T("menu")) && node.children() > 0) {
 				pItem->m_pFirstChild = new CMenuItem(this);
 				pItem->m_pFirstChild->m_pParent = pItem;
+#ifdef _MSC_VER
 				PraseMenuItems(node.child(0), pItem->m_pFirstChild);
+#else
+				pug::xml_node child = node.child(0);
+				PraseMenuItems(child, pItem->m_pFirstChild);
+#endif
 			}
 			pItem->m_pNextSibling = new CMenuItem(this);
 			pItem->m_pNextSibling->m_pPrevSibling = pItem;
@@ -239,7 +264,12 @@ void CKuMenuSet::PraseMenuItems(pug::xml_node &node, CMenuItem *pItem)
 					pItem->m_pFirstChild = pChild;
 				}
 				pChild->m_pParent = pItem;
+#ifdef _MSC_VER
 				PraseMenuItems(node.child(0), pChild);
+#else
+				pug::xml_node child = node.child(0);
+				PraseMenuItems(child, pChild);
+#endif
 				pChild = pItem->GetLastChild();
 			}
 			if (pItem->m_pFirstChild) {
@@ -505,7 +535,7 @@ bool CKuMenuSet::CMenuItem::IsOurPath(LPCTSTR sPath)
 
 	CString sCurClass;
 	int i = 0;
-	while (!(sCurClass = sClasses.Tokenize(_T(" \t\n"), i)).IsEmpty()) {
+	while (!(sCurClass = sClasses.Tokenize(_T(" \t\r\n"), i)).IsEmpty()) {
 		if (sCurClass == _T('*') && sClass != _T("folder"))
 			return true;
 		if (!sClass.CompareNoCase(sCurClass))
@@ -740,7 +770,7 @@ bool CKuMenuSet::CMenuItem::InvokeCommand()
 								size_t offset = _tcsspn(ptr + 2, _T("0123456789"));
 								int iFrom = 0;
 								if (offset > 0)
-									_sntscanf(ptr + 2, offset, _T("%d"), &iFrom);
+									_stscanf(ptr + 2, _T("%d"), &iFrom);
 								if (pShellExecuteThread->m_sTempFile.IsEmpty()) {
 									TCHAR sTempPath[KU_MAX_PATH];
 									if (GetTempPath(_countof(sTempPath), sTempPath)) {
@@ -920,23 +950,23 @@ DWORD WINAPI CKuMenuSet::CMenuItem::ShellExecuteThread(LPVOID lpParameter)
 
 	size_t i, count = aCmds.GetCount();
 	for (i = 0;i < count;i++) {
+		TRACE(_T("aCmds[%d]=%s\n"), i, aCmds[i].GetString());
 		CString sFile;
-		LPTSTR pFile;
 		if (pShellExecuteThread->m_bConsole) {
 			sFile = aCmds[i];
-			pFile = sFile.GetBuffer();
+			LPTSTR pFile = sFile.GetBuffer();
 			PathRemoveArgs(pFile);
 			PathUnquoteSpaces(pFile);
 			sFile.ReleaseBuffer();
+			shexec.lpFile = sFile.GetString();
 		}
 		else
-			pFile = (LPTSTR) _T("cmd.exe");
+			shexec.lpFile = _T("cmd.exe");
 		shexec.hProcess = 0;
-		shexec.lpFile = pFile;
 		if (pShellExecuteThread->m_bConsole)
 			shexec.lpParameters = PathGetArgs(aCmds[i]);
 		else {
-			sFile.Format(_T("/c %s"), aCmds[i]);
+			sFile.Format(_T("/c %s"), aCmds[i].GetString());
 			shexec.lpParameters = sFile;
 		}
 		ShellExecuteEx(&shexec);
@@ -961,6 +991,62 @@ inline bool IsAcpCompatible(LPCWSTR str)
 	WideCharToMultiByte(CP_ACP, WC_NO_BEST_FIT_CHARS, str, -1, NULL, 0, NULL, &bUsed);
 	return !bUsed;
 }
+
+#ifdef __GNUC__
+#define _CHAR wchar_t
+_CHAR * __cdecl wcstok_s(_CHAR *_String, const _CHAR *_Control, _CHAR **_Context)
+{
+    _CHAR *token;
+    const _CHAR *ctl;
+
+    /* If string==NULL, continue with previous string */
+    if (!_String)
+    {
+        _String = *_Context;
+    }
+
+    /* Find beginning of token (skip over leading delimiters). Note that
+    * there is no token iff this loop sets string to point to the terminal null. */
+    for ( ; *_String != 0 ; _String++)
+    {
+        for (ctl = _Control; *ctl != 0 && *ctl != *_String; ctl++)
+            ;
+        if (*ctl == 0)
+        {
+            break;
+        }
+    }
+
+    token = _String;
+
+    /* Find the end of the token. If it is not the end of the string,
+    * put a null there. */
+    for ( ; *_String != 0 ; _String++)
+    {
+        for (ctl = _Control; *ctl != 0 && *ctl != *_String; ctl++)
+            ;
+        if (*ctl != 0)
+        {
+            *_String++ = 0;
+            break;
+        }
+    }
+
+    /* Update the context */
+    *_Context = _String;
+
+    /* Determine if a token has been found. */
+    if (token == _String)
+    {
+        return NULL;
+    }
+    else
+    {
+        return token;
+    }
+}
+#undef _CHAR
+#endif
 
 LPCWSTR GetAcpCompatiblePath(LPCWSTR sPath, LPWSTR sDest, DWORD cch = MAX_PATH)
 {
@@ -1089,7 +1175,7 @@ bool CKuMenuSet::CMenuItem::DropLinks(LPCTSTR sDir, LPCTSTR sPath, DWORD uFlags)
 		sTarget = sPath;
 
 	if (uType == DROP_SYMBOLIC)
-		return !!dll::CreateSymbolicLinkW(sLink, _tcsncmp(sTarget, _T(".\\"), 2) ? sTarget : sTarget.GetString() + 2, PathIsDirectory(sPath) ? SYMBOLIC_LINK_FLAG_DIRECTORY : 0);
+		return !!dll::CreateSymbolicLinkW(sLink, _tcsncmp(sTarget, _T(".\\"), 2) ? sTarget.GetString() : sTarget.GetString() + 2, PathIsDirectory(sPath) ? SYMBOLIC_LINK_FLAG_DIRECTORY : 0);
 	else if (uType == DROP_JUNCTION) {
 		if (!CreateDirectory(sLink, NULL))
 			return false;

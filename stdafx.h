@@ -10,9 +10,12 @@
 #define WIN32_LEAN_AND_MEAN             // Exclude rarely-used stuff from Windows headers
 // Windows Header Files:
 #include <windows.h>
+#include <winioctl.h>
 #include <tchar.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <io.h>
+#include <fcntl.h>
 
 #ifdef HAVE_ATL
 #define _ATL_CSTRING_EXPLICIT_CONSTRUCTORS      // some CString constructors will be explicit
@@ -21,26 +24,55 @@
 #include <atlstr.h>
 #include <atlcoll.h>
 #include <atlsimpcoll.h>
-#else
-#include "KuString.h"
-#include "KuATL.h"
 #endif
 
 #include <shlwapi.h>
-#include <shobjidl.h>
 #include <shlobj.h>
 #include <shellapi.h>
 #include <olectl.h>
 
-#include <gdiplus.h>
+#ifdef __GNUC__
+#define __out_bcount(...)
+#define __out_ecount(...)
+#define __field_ecount_opt(...)
+#define __reserved
+#define __out_awcount(...)
+#define __RPC__deref_out
 
-#include "pugxml.h"
-#include "FSLinks/FSLinks.h"
+#include <pshpack8.h>
+namespace Gdiplus {
+	enum Status {
+		Ok = 0
+	};
+	#include <GdiPlusInit.h>
+
+	typedef Status GpStatus;
+	typedef DWORD ARGB;
+
+	class GpImage;
+	class GpBitmap;
+	namespace Color
+	{
+		enum
+		{
+			Transparent          = 0x00FFFFFF
+		};
+	}
+}
+#include <poppack.h>
+#define WINGDIPAPI __stdcall
+#else
+#include <gdiplus.h>
+#endif
 
 #ifndef TRACE
-	#ifdef HAVE_ATL
-		#include <atlbase.h>
-		#define TRACE(...) ATLTRACE(atlTraceGeneral, 0, __VA_ARGS__)
+	#ifdef _DEBUG
+		#ifdef HAVE_ATL
+			#include <atlbase.h>
+			#define TRACE(...) ATLTRACE(atlTraceGeneral, 0, __VA_ARGS__)
+		#else
+			#define TRACE(...) _ftprintf(stderr, __VA_ARGS__)
+		#endif
 	#else
 		#define TRACE(...)
 	#endif
