@@ -10,7 +10,7 @@
 class CKuContextMenu : public IContextMenu3
 {
 	IMPLEMENT_INTERFACE
-
+public:
 	class CShellExtInit : public IShellExtInit
 	{
 	IMPLEMENT_INTERFACE
@@ -27,7 +27,7 @@ class CKuContextMenu : public IContextMenu3
 			/* [unique][in] */ 
 			HKEY hkeyProgID);
 	};
-public:
+
 	CKuContextMenu() {}
 	virtual ~CKuContextMenu() {}
 

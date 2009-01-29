@@ -77,7 +77,7 @@ bool InitConfig()
 	if (bInit)
 		return true;
 
-#ifdef _DEBUG
+#if defined(_DEBUG) && !defined(HAVE_ATL)
 	RedirectIOToConsole();
 #endif
 

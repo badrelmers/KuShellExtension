@@ -13,6 +13,10 @@ HRESULT STDMETHODCALLTYPE CKuContextMenu::CShellExtInit::QueryInterface(
 {
 	if (riid == IID_IShellExtInit || riid == IID_IUnknown)
 		*ppvObject = this;
+	else if (riid == IID_IContextMenu3 || riid == IID_IContextMenu2 || riid == IID_IContextMenu) {
+		*ppvObject = new CKuContextMenu;
+		return S_OK;
+	}
 	else
 		return E_NOINTERFACE;
 	AddRef();

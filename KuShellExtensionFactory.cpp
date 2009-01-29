@@ -27,7 +27,12 @@ HRESULT STDMETHODCALLTYPE CKuShellExtensionFactory::CreateInstance(
 
 	IUnknown *pObj = NULL;
 
-	if (riid == IID_IContextMenu3 || riid == IID_IContextMenu2 || riid == IID_IContextMenu) {
+	if (riid == IID_IShellExtInit) {
+		try {
+			pObj = reinterpret_cast<IUnknown *>(new CKuContextMenu::CShellExtInit);
+		} catch (...) { return E_OUTOFMEMORY; }
+	}
+	else if (riid == IID_IContextMenu3 || riid == IID_IContextMenu2 || riid == IID_IContextMenu) {
 		try {
 			pObj = reinterpret_cast<IUnknown *>(new CKuContextMenu);
 		} catch (...) { return E_OUTOFMEMORY; }
