@@ -17,10 +17,12 @@
 
 #define PERCENT_EXPANSION_FLAGS		"dpnxs"
 
+CKuMenuSet g_menu;
+
 CAtlMap<CString, CString> CKuMenuSet::m_BuiltinVars;
 
 CKuMenuSet::CKuMenuSet()
-	: m_pFirstItem(NULL), m_bFromFolderBk(false)
+	: m_pFirstItem(NULL)
 {
 }
 
@@ -457,7 +459,7 @@ void CKuMenuSet::InitBuiltinVars()
 
 	m_BuiltinVars.RemoveAll();
 
-	m_BuiltinVars.SetAt(_T("CONFIG"), CKuContextMenu::m_sConfigFile);
+	m_BuiltinVars.SetAt(_T("CONFIG"), ku::sConfigFile);
 
 	prog.GetEnvironmentVariable(_T("ProgramFiles"));
 	m_BuiltinVars.SetAt(_T("ProgramFiles"), prog);
@@ -568,11 +570,11 @@ bool CKuMenuSet::CMenuItem::ShouldShown()
 			if (pItem->ShouldShown()) {
 				if (m_sClasses.IsEmpty())
 					return true;
-				return IsOurPath(m_pKuMenuSet->m_aFiles[0]);
+				return IsOurPath(m_pKuMenuSet->m_pData->m_aFiles[0]);
 			}
 		return false;
 	}
-	if (m_dwMultiItems != m_pKuMenuSet->m_aFiles.GetCount() && m_dwMultiItems != 0 && !IsSeparator())
+	if (m_dwMultiItems != m_pKuMenuSet->m_pData->m_aFiles.GetCount() && m_dwMultiItems != 0 && !IsSeparator())
 		return false;
 	switch (m_eAction) {
 		case ACT_BULITIN:
@@ -620,8 +622,8 @@ bool CKuMenuSet::CMenuItem::ShouldShown()
 			// no break!!
 		case ACT_EXECUTE:
 			if (m_sClasses.IsEmpty() && m_pParent)
-				return m_pParent->IsOurPath(m_pKuMenuSet->m_aFiles[0]);
-			return IsOurPath(m_pKuMenuSet->m_aFiles[0]);
+				return m_pParent->IsOurPath(m_pKuMenuSet->m_pData->m_aFiles[0]);
+			return IsOurPath(m_pKuMenuSet->m_pData->m_aFiles[0]);
 	}
 	return false;
 }
@@ -681,8 +683,8 @@ bool CKuMenuSet::CMenuItem::InvokeCommand()
 				CShellExecuteThread *pShellExecuteThread = new CShellExecuteThread;
 
 				pShellExecuteThread->m_bConsole = m_bConsole; 
-				pShellExecuteThread->m_sWorkingDir = m_pKuMenuSet->m_aFiles[0];
-				if (!m_pKuMenuSet->m_bFromFolderBk) {
+				pShellExecuteThread->m_sWorkingDir = m_pKuMenuSet->m_pData->m_aFiles[0];
+				if (!m_pKuMenuSet->m_pData->m_bFromFolderBk) {
 					PathRemoveFileSpec(pShellExecuteThread->m_sWorkingDir.GetBuffer());
 					pShellExecuteThread->m_sWorkingDir.ReleaseBuffer();
 				}
@@ -695,7 +697,7 @@ bool CKuMenuSet::CMenuItem::InvokeCommand()
 				for (LPTSTR ptr = (LPTSTR) m_sAction.GetString();*ptr;ptr++) {
 					if (ptr[0] == _T('%')) {
 						LPCTSTR sFlags = ptr + 1;
-						size_t count = m_pKuMenuSet->m_aFiles.GetCount();
+						size_t count = m_pKuMenuSet->m_pData->m_aFiles.GetCount();
 						if (count > 0) {
 							if (ptr[1] == _T('~')) {
 								ptr++;
@@ -705,7 +707,7 @@ bool CKuMenuSet::CMenuItem::InvokeCommand()
 								ptr[1] = _T('\0');
 								for (size_t i = 0;i < count;i++)
 									for (size_t n = 0;n < aCmds.GetCount();n++)
-										aCmds[n].AppendFormat(_T("%s\"%s\""), (i == 0 ? _T("") : _T(" ")), ExpandFileName(m_pKuMenuSet->m_aFiles[i], sFlags, sExpand));
+										aCmds[n].AppendFormat(_T("%s\"%s\""), (i == 0 ? _T("") : _T(" ")), ExpandFileName(m_pKuMenuSet->m_pData->m_aFiles[i], sFlags, sExpand));
 								ptr[1] = _T('*');
 							}
 							else if (ptr[1] == _T('@')) {
@@ -716,7 +718,7 @@ bool CKuMenuSet::CMenuItem::InvokeCommand()
 										aCmds[i] = aCmds[0];
 								}
 								for (size_t i = 0;i < count;i++)
-									aCmds[i].AppendFormat(_T("\"%s\""), ExpandFileName(m_pKuMenuSet->m_aFiles[i], sFlags, sExpand));
+									aCmds[i].AppendFormat(_T("\"%s\""), ExpandFileName(m_pKuMenuSet->m_pData->m_aFiles[i], sFlags, sExpand));
 								ptr[1] = _T('@');
 							}
 							else if (ptr[1] >= _T('1') && ptr[1] <= _T('9')) {
@@ -725,7 +727,7 @@ bool CKuMenuSet::CMenuItem::InvokeCommand()
 								int i = ch - _T('1');
 								if (i <= count - 1)
 									for (size_t n = 0;n < aCmds.GetCount();n++)
-										aCmds[n] += ExpandFileName(m_pKuMenuSet->m_aFiles[i], sFlags, sExpand);
+										aCmds[n] += ExpandFileName(m_pKuMenuSet->m_pData->m_aFiles[i], sFlags, sExpand);
 								ptr[1] = ch;
 							}
 							else if (ptr[1] == _T('w')) {
@@ -734,7 +736,7 @@ bool CKuMenuSet::CMenuItem::InvokeCommand()
 									aCmds[n] += sExpand;
 							}
 							else if (ptr[1] == _T('z')) {
-								LPCTSTR str = PathFindFileName((count > 1) ? pShellExecuteThread->m_sWorkingDir : m_pKuMenuSet->m_aFiles[0]);
+								LPCTSTR str = PathFindFileName((count > 1) ? pShellExecuteThread->m_sWorkingDir : m_pKuMenuSet->m_pData->m_aFiles[0]);
 								if (str)
 									for (size_t n = 0;n < aCmds.GetCount();n++)
 										aCmds[n] += str;
@@ -790,7 +792,7 @@ bool CKuMenuSet::CMenuItem::InvokeCommand()
 														*(((wchar_t *)eol) + 1) = L'\n';
 														if (WriteFile(hFile, bom, 2, &dwWritten, NULL)) {
 															for (int i = iFrom;i < count;i++) {
-																ExpandFileName(m_pKuMenuSet->m_aFiles[i], sFlags, sExpand);
+																ExpandFileName(m_pKuMenuSet->m_pData->m_aFiles[i], sFlags, sExpand);
 																if (!WriteFile(hFile, (LPCVOID) sExpand.GetString(), sExpand.GetLength() * sizeof(wchar_t), &dwWritten, NULL) ||
 																	!WriteFile(hFile, (LPCVOID) eol, 4, &dwWritten, NULL))
 																	break;
@@ -801,7 +803,7 @@ bool CKuMenuSet::CMenuItem::InvokeCommand()
 														eol[0] = '\r';
 														eol[1] = '\n';
 														for (int i = iFrom;i < count;i++) {
-															CStringCharFromWChar sFile(ExpandFileName(m_pKuMenuSet->m_aFiles[i], sFlags, sExpand));
+															CStringCharFromWChar sFile(ExpandFileName(m_pKuMenuSet->m_pData->m_aFiles[i], sFlags, sExpand));
 															if (!WriteFile(hFile, (LPCVOID) sFile.GetString(), sFile.GetLength() * sizeof(char), &dwWritten, NULL) ||
 																!WriteFile(hFile, (LPCVOID) eol, 2, &dwWritten, NULL))
 																break;
@@ -815,7 +817,7 @@ bool CKuMenuSet::CMenuItem::InvokeCommand()
 														eol[1] = '\n';
 														if (WriteFile(hFile, bom, 3, &dwWritten, NULL)) {
 															for (int i = iFrom;i < count;i++) {
-																CStringUTF8FromWChar sFile(ExpandFileName(m_pKuMenuSet->m_aFiles[i], sFlags, sExpand));
+																CStringUTF8FromWChar sFile(ExpandFileName(m_pKuMenuSet->m_pData->m_aFiles[i], sFlags, sExpand));
 																if (!WriteFile(hFile, (LPCVOID) sFile.GetString(), sFile.GetLength() * sizeof(char), &dwWritten, NULL) ||
 																	!WriteFile(hFile, (LPCVOID) eol, 2, &dwWritten, NULL))
 																	break;
@@ -895,7 +897,7 @@ bool CKuMenuSet::CMenuItem::InvokeCommand()
 										UINT uCount = DragQueryFile(hDrop, (UINT)-1, NULL, 0);
 										for (UINT i = 0;i < uCount;i++) {
 											if (DragQueryFile(hDrop, i, sFile, _countof(sFile)))
-												DropLinks(m_pKuMenuSet->m_aFiles[0], sFile, uFlags);
+												DropLinks(m_pKuMenuSet->m_pData->m_aFiles[0], sFile, uFlags);
 										}
 									}
 									else {
@@ -910,7 +912,7 @@ bool CKuMenuSet::CMenuItem::InvokeCommand()
 												int i = 0;
 												while (!(sLine = sText.Tokenize(_T("\t\r\n"), i)).IsEmpty()) {
 													if (PathFileExists(sLine))
-														DropLinks(m_pKuMenuSet->m_aFiles[0], sLine, uFlags);
+														DropLinks(m_pKuMenuSet->m_pData->m_aFiles[0], sLine, uFlags);
 												}
 											}
 										}

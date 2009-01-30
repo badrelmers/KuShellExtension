@@ -29,12 +29,14 @@ HRESULT STDMETHODCALLTYPE CKuShellExtensionFactory::CreateInstance(
 
 	if (riid == IID_IShellExtInit) {
 		try {
-			pObj = reinterpret_cast<IUnknown *>(new CKuContextMenu::CShellExtInit);
+			pObj = reinterpret_cast<IUnknown *>(new CKuShellExtInit);
+			pObj->AddRef();
 		} catch (...) { return E_OUTOFMEMORY; }
 	}
 	else if (riid == IID_IContextMenu3 || riid == IID_IContextMenu2 || riid == IID_IContextMenu) {
 		try {
 			pObj = reinterpret_cast<IUnknown *>(new CKuContextMenu);
+			pObj->AddRef();
 		} catch (...) { return E_OUTOFMEMORY; }
 	}
     else
@@ -60,10 +62,12 @@ HRESULT STDMETHODCALLTYPE CKuShellExtensionFactory::LockServer(
 	/* [in] */ BOOL fLock)
 {
 	if (fLock)
-        InterlockedIncrement((LONG *) &CUnknown::g_uRefCount);
+        InterlockedIncrement((LONG *) &CRefCount::m_uInstances);
 	else {
-		if (CUnknown::g_uRefCount > 0)
-			InterlockedDecrement((LONG *) &CUnknown::g_uRefCount);
+		ULONG uInstances = 0;
+		InterlockedExchange((LONG *) &uInstances, CRefCount::m_uInstances);
+		if (uInstances > 0)
+			InterlockedDecrement((LONG *) &CRefCount::m_uInstances);
 		else
 			return E_FAIL;
 	}

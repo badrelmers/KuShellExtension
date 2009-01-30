@@ -32,12 +32,11 @@
 #include <olectl.h>
 
 #ifdef __GNUC__
-#define __out_bcount(...)
-#define __out_ecount(...)
-#define __field_ecount_opt(...)
-#define __reserved
-#define __out_awcount(...)
-#define __RPC__deref_out
+//#define __out_bcount(...)
+//#define __out_ecount(...)
+//#define __field_ecount_opt(...)
+//#define __reserved
+//#define __out_awcount(...)
 
 #include <pshpack8.h>
 namespace Gdiplus {
@@ -55,7 +54,7 @@ namespace Gdiplus {
 	{
 		enum
 		{
-			Transparent          = 0x00FFFFFF
+			Transparent = 0x00FFFFFF
 		};
 	}
 }

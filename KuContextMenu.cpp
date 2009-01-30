@@ -1,89 +1,22 @@
-#include "StdAfx.h"
+#include "stdafx.h"
 #include "KuContextMenu.h"
 #include "dll.h"
 #include "globals.h"
 
 //////////////////////////////////////////////////////////////////////////////////////
-// CKuContextMenu::CShellExtInit
-//////////////////////////////////////////////////////////////////////////////////////
-
-HRESULT STDMETHODCALLTYPE CKuContextMenu::CShellExtInit::QueryInterface( 
-	/* [in] */ REFIID riid,
-	/* [iid_is][out] */ __RPC__deref_out void __RPC_FAR *__RPC_FAR *ppvObject)
-{
-	if (riid == IID_IShellExtInit || riid == IID_IUnknown)
-		*ppvObject = this;
-	else if (riid == IID_IContextMenu3 || riid == IID_IContextMenu2 || riid == IID_IContextMenu) {
-		*ppvObject = new CKuContextMenu;
-		return S_OK;
-	}
-	else
-		return E_NOINTERFACE;
-	AddRef();
-	return S_OK;
-}
-
-HRESULT STDMETHODCALLTYPE CKuContextMenu::CShellExtInit::Initialize( 
-    /* [unique][in] */ 
-    PCIDLIST_ABSOLUTE pidlFolder,
-    /* [unique][in] */ 
-    IDataObject *pdtobj,
-    /* [unique][in] */ 
-    HKEY hkeyProgID)
-{
-	m_menu.m_aFiles.RemoveAll();
-
-    // If a data object pointer was passed in, save it and
-    // extract the file name. 
-    if (pdtobj) { 
-        STGMEDIUM   medium;
-        FORMATETC   fe = {CF_HDROP, NULL, DVASPECT_CONTENT, -1, TYMED_HGLOBAL};
-        UINT        uCount;
-
-        if(SUCCEEDED(pdtobj->GetData(&fe, &medium)))
-        {
-            // Get the count of files dropped.
-            uCount = DragQueryFile((HDROP)medium.hGlobal, (UINT)-1, NULL, 0);
-
-            // Get the first file name from the CF_HDROP.
-            UINT i;
-			m_menu.m_aFiles.SetCount(uCount);
-			for (i = 0;i < uCount;i++) {
-				DragQueryFile((HDROP)medium.hGlobal, i, m_menu.m_aFiles[i].GetBufferSetLength(KU_MAX_PATH), KU_MAX_PATH);
-				m_menu.m_aFiles[i].ReleaseBuffer();
-			}
-
-            ReleaseStgMedium(&medium);
-        }
-
-		m_menu.m_bFromFolderBk = false;
-    }
-	else if (pidlFolder) {
-		m_menu.m_aFiles.SetCount(1);
-		SHGetPathFromIDList(pidlFolder, m_menu.m_aFiles[0].GetBufferSetLength(KU_MAX_PATH));
-		m_menu.m_aFiles[0].ReleaseBuffer();
-
-		m_menu.m_bFromFolderBk = true;
-	}
-
-	return S_OK;
-}
-
-//////////////////////////////////////////////////////////////////////////////////////
 // CKuContextMenu
 //////////////////////////////////////////////////////////////////////////////////////
-
-CKuMenuSet CKuContextMenu::m_menu;
-CString CKuContextMenu::m_sConfigFile;
-BY_HANDLE_FILE_INFORMATION CKuContextMenu::m_cfgFileInfo = {0};
-UINT CKuContextMenu::m_idCmdFirst = 0;
+//UINT CKuContextMenu::m_idCmdFirst = 0;
 
 HRESULT STDMETHODCALLTYPE CKuContextMenu::QueryInterface( 
 	/* [in] */ REFIID riid,
-	/* [iid_is][out] */ __RPC__deref_out void __RPC_FAR *__RPC_FAR *ppvObject)
+	/* [iid_is][out] */ void __RPC_FAR *__RPC_FAR *ppvObject)
 {
 	if (riid == IID_IShellExtInit) {
-		*ppvObject = new CShellExtInit;
+		CKuShellExtInit *p = new CKuShellExtInit;
+		p->AddRef();
+		m_pData = p->m_pData;
+		*ppvObject = p;
 		return S_OK;
 	}
 	else if (riid == IID_IContextMenu3 || riid == IID_IContextMenu2 || riid == IID_IContextMenu || riid == IID_IUnknown)
@@ -91,32 +24,6 @@ HRESULT STDMETHODCALLTYPE CKuContextMenu::QueryInterface(
 	else
 		return E_NOINTERFACE;
 	AddRef();
-	return S_OK;
-}
-
-HRESULT CKuContextMenu::LoadConfig()
-{
-	if (m_sConfigFile.IsEmpty()) {
-		m_sConfigFile = ku::sModulePath;
-		LPTSTR ptr = _tcsrchr(m_sConfigFile.GetBufferSetLength(KU_MAX_PATH), _T('\\'));
-		if (ptr)
-			_tcscpy(ptr + 1, _T("config.xml"));
-		m_sConfigFile.ReleaseBuffer();
-		CKuMenuSet::InitBuiltinVars();
-	}
-
-	HANDLE hFile;
-	BY_HANDLE_FILE_INFORMATION cfgFileInfo = m_cfgFileInfo;
-	if ((hFile = CreateFile(m_sConfigFile, 0, FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, NULL)) == INVALID_HANDLE_VALUE && m_menu.IsEmpty())
-		return E_HANDLE;
-	if (!GetFileInformationByHandle(hFile, &m_cfgFileInfo) && m_menu.IsEmpty())
-		return E_FAIL;
-	CloseHandle(hFile);
-	if (m_cfgFileInfo.nFileSizeLow != cfgFileInfo.nFileSizeLow || m_cfgFileInfo.nFileSizeHigh != cfgFileInfo.nFileSizeHigh ||
-		m_cfgFileInfo.ftLastWriteTime.dwLowDateTime != cfgFileInfo.ftLastWriteTime.dwLowDateTime || 
-		m_cfgFileInfo.ftLastWriteTime.dwHighDateTime != cfgFileInfo.ftLastWriteTime.dwHighDateTime)
-		if (!m_menu.FromFile(m_sConfigFile))
-			return E_FAIL;
 	return S_OK;
 }
 
@@ -132,13 +39,18 @@ HRESULT STDMETHODCALLTYPE CKuContextMenu::QueryContextMenu(
 	/* [in] */ 
 	UINT uFlags)
 {
-	HRESULT hr = LoadConfig();
+	if (!m_pData)
+		return E_UNEXPECTED;
+	g_menu.m_pData = m_pData;
+	m_pData = NULL;
+
+	HRESULT hr = ku::LoadConfig();
 	if (hr != S_OK)
 		return hr;
 
 	m_idCmdFirst = idCmdFirst;
 	if(!(CMF_DEFAULTONLY & uFlags))
-		return m_menu.QueryContextMenu(hMenu, indexMenu, idCmdFirst, idCmdLast, uFlags);
+		return g_menu.QueryContextMenu(hMenu, indexMenu, idCmdFirst, idCmdLast, uFlags);
 
 	return S_OK;
 }
@@ -183,7 +95,7 @@ HRESULT STDMETHODCALLTYPE CKuContextMenu::InvokeCommand(
 		id = LOWORD(piciex->lpVerbW);
 	else
 		id = *(bUnicode ? (WORD *) piciex->lpVerbW : (WORD *) pici->lpVerb);
-	if (!m_menu.InvokeCommand(id + m_idCmdFirst))
+	if (!g_menu.InvokeCommand(id + m_idCmdFirst))
 		return E_FAIL;
 
 	return S_OK;
@@ -264,7 +176,7 @@ HRESULT STDMETHODCALLTYPE CKuContextMenu::HandleMenuMsg2(
 				DRAWITEMSTRUCT* lpdis = (DRAWITEMSTRUCT*)lParam;
 				if ((lpdis==NULL)||(lpdis->CtlType != ODT_MENU))
 					return S_OK; //not for a menu
-				HICON hIcon = m_menu.GetMenuIcon(lpdis->itemID);
+				HICON hIcon = g_menu.GetMenuIcon(lpdis->itemID);
 				if (hIcon == NULL)
 					return S_OK;
 				DrawIconEx(lpdis->hDC,
@@ -371,6 +283,7 @@ HBITMAP CKuContextMenu::IconToBitmap(HICON hIcon, int cx, int cy)
 		pBmpInfo->bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
 		RGBQUAD *bits;
 		VERIFY( bits = (RGBQUAD *) malloc(cx * cy * sizeof(RGBQUAD)) );
+		// TODO: Find a better way to detect a icon is 32bpp or not.
 		if (GetDIBits(hdcDest, hBmp, 0, 0, 0, pBmpInfo, DIB_RGB_COLORS) &&
 			GetDIBits(hdcDest, hBmp, 0, 16, bits, pBmpInfo, DIB_RGB_COLORS))
 		{
@@ -386,7 +299,7 @@ HBITMAP CKuContextMenu::IconToBitmap(HICON hIcon, int cx, int cy)
 	}
 	DeleteDC(hdcDest);
 
-	// this works in most cases, but generates ugly images for icon contains alpha channel and depend on GDI+
+	// this works in most cases, but generates ugly images for such icons contains alpha channel and depend on GDI+
 	if (!bIs32Bpp && dll::GdipCreateBitmapFromHICON) {
 		if (dll::GdiplusStartup && !ku::gdiplusToken)
 			dll::GdiplusStartup(&ku::gdiplusToken, &ku::gdiplusStartupInput, NULL);

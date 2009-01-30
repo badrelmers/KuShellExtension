@@ -1,6 +1,6 @@
 #pragma once
 
-#include "CUnknown.h"
+#include "RefCount.h"
 
 class CKuShellExtensionFactory : public IClassFactory
 {

@@ -369,6 +369,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\KuShellExtInit.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\stdafx.cpp"
 				>
 				<FileConfiguration
@@ -415,10 +419,6 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
-				RelativePath=".\CUnknown.h"
-				>
-			</File>
-			<File
 				RelativePath=".\dll.h"
 				>
 			</File>
@@ -439,7 +439,15 @@
 				>
 			</File>
 			<File
+				RelativePath=".\KuShellExtInit.h"
+				>
+			</File>
+			<File
 				RelativePath=".\pugxml.h"
+				>
+			</File>
+			<File
+				RelativePath=".\RefCount.h"
 				>
 			</File>
 			<File

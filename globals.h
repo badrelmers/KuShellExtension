@@ -4,6 +4,8 @@
 #include "KuString.h"
 #endif
 
+class CKuMenuSet;
+
 typedef union {
 	DWORD m_dwVersion;
 	struct {
@@ -27,5 +29,10 @@ extern SYSVER SysVer;
 
 extern Gdiplus::GdiplusStartupInput gdiplusStartupInput;
 extern ULONG_PTR gdiplusToken;
+
+extern CString sConfigFile;
+extern BY_HANDLE_FILE_INFORMATION cfgFileInfo;
+
+HRESULT LoadConfig();
 
 }

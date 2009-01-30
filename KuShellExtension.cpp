@@ -11,17 +11,17 @@
 #ifdef _WIN64
 #define CLSID_CONFIG _T("CLSID64")
 // {72F6A03F-7B17-4e65-AE37-666FC9024FA2}
-CLSID g_CLSID = 
+static CLSID g_CLSID = 
 { 0x72f6a03f, 0x7b17, 0x4e65, { 0xae, 0x37, 0x66, 0x6f, 0xc9, 0x2, 0x4f, 0xa2 } };
 #else
 #define CLSID_CONFIG _T("CLSID32")
 // {ACF4C166-8665-462d-B701-D4978E0009A1}
-CLSID g_CLSID = 
+static CLSID g_CLSID = 
 { 0xacf4c166, 0x8665, 0x462d, { 0xb7, 0x1, 0xd4, 0x97, 0x8e, 0x0, 0x9, 0xa1 } };
 #endif
 
-CString g_sName;
-CString g_sCLSID;
+static CString g_sName;
+static CString g_sCLSID;
 
 void RedirectIOToConsole()
 {
@@ -88,8 +88,8 @@ bool InitConfig()
 		ku::bIsWow64 = FALSE;
 #endif
 
-	CKuContextMenu::LoadConfig();
-	if (CKuContextMenu::m_menu.GetOurVariable(CLSID_CONFIG, g_sCLSID)) {
+	ku::LoadConfig();
+	if (g_menu.GetOurVariable(CLSID_CONFIG, g_sCLSID)) {
 		if (g_sCLSID.GetLength() != 38)
 			return false;
 		g_sCLSID.MakeUpper();
@@ -140,7 +140,6 @@ EXTERN_C BOOL APIENTRY DllMain( HMODULE hModule,
 				for (i = 0;ku::sBlackList[i];i++)
 					if (!_tcsicmp(sProcessName, ku::sBlackList[i]))
 						return FALSE;
-
 				ku::hModule = hModule;
 				GetModuleFileName(hModule, ku::sModulePath.GetBufferSetLength(KU_MAX_PATH), KU_MAX_PATH);
 				ku::sModulePath.ReleaseBuffer();
@@ -202,8 +201,12 @@ STDAPI DllGetClassObject(REFCLSID rclsid, REFIID riid, LPVOID * ppv)
 
     IUnknown *pObj = NULL;
 
-    if (rclsid == g_CLSID)
-        pObj = new CKuShellExtensionFactory;
+	if (rclsid == g_CLSID) {
+		try {
+			pObj = new CKuShellExtensionFactory;
+			pObj->AddRef();
+		} catch (...) { return E_OUTOFMEMORY; }
+	}
     else
         return CLASS_E_CLASSNOTAVAILABLE;
 
@@ -225,7 +228,7 @@ STDAPI DllGetClassObject(REFCLSID rclsid, REFIID riid, LPVOID * ppv)
 STDAPI DllCanUnloadNow()
 {
 	ULONG uZero = 0;
-	InterlockedExchange((LONG *) &uZero, CUnknown::g_uRefCount);
+	InterlockedExchange((LONG *) &uZero, CRefCount::m_uInstances);
 	if (uZero == 0) {
 		if (dll::GdiplusShutdown && ku::gdiplusToken) {
 			dll::GdiplusShutdown(ku::gdiplusToken);

@@ -1,34 +1,14 @@
 #pragma once
 
-#include "CUnknown.h"
+#include "RefCount.h"
 #include "KuMenuSet.h"
 
-#ifndef PCIDLIST_ABSOLUTE
-#define PCIDLIST_ABSOLUTE LPCITEMIDLIST
-#endif
-
+// NOTE: Inherit multiple COM interfaces cause problems in MinGW, it seems caused by __stdcall class methods.
 class CKuContextMenu : public IContextMenu3
 {
 	IMPLEMENT_INTERFACE
 public:
-	class CShellExtInit : public IShellExtInit
-	{
-	IMPLEMENT_INTERFACE
-	public:
-		CShellExtInit() {}
-		virtual ~CShellExtInit() {}
-
-		// IShellExtInit
-		virtual HRESULT STDMETHODCALLTYPE Initialize( 
-			/* [unique][in] */ 
-			PCIDLIST_ABSOLUTE pidlFolder,
-			/* [unique][in] */ 
-			IDataObject *pdtobj,
-			/* [unique][in] */ 
-			HKEY hkeyProgID);
-	};
-
-	CKuContextMenu() {}
+	CKuContextMenu() : m_idCmdFirst(0) {}
 	virtual ~CKuContextMenu() {}
 
 	// IContextMenu
@@ -80,13 +60,11 @@ public:
 		/* [out] */ 
 		LRESULT *pResult);
 
-	static CString m_sConfigFile;
+	CRefCountPtr<CKuShellExtInitData> m_pData;
+
 	static HBITMAP Create32BitBitmap(HDC hdc, int cx, int cy, VOID **ppvBits = NULL);
 	static HBITMAP IconToBitmap(HICON hIcon, int cx, int cy);
 	static HBITMAP IconToBitmap(HICON hIcon);
-	static HRESULT LoadConfig();
-	static CKuMenuSet m_menu;
 private:
-	static BY_HANDLE_FILE_INFORMATION m_cfgFileInfo;
-	static UINT m_idCmdFirst;
+	UINT m_idCmdFirst;
 };
