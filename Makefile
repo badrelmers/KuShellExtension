@@ -19,7 +19,10 @@ DLLWRAP=$(CTARGET)dllwrap --driver-name $(CXX) --dlltool-name $(DLLTOOL)
 
 INCLUDES=-Igdiplus -I. -I..
 UNICODE_DEFS=-DUNICODE -D_UNICODE
-LDFLAGS=-lshlwapi -luuid -lgdi32 -lole32 -Wl,--enable-stdcall-fixup
+LDFLAGS=-shared -lshlwapi -luuid -lgdi32 -lole32 -Wl,--enable-stdcall-fixup
+ifeq ($(B),win64)
+LDFLAGS+=-m64
+endif
 RCFLAGS=--input-format rc --output-format coff -DEMBED_MANIFEST $(UNICODE_DEFS)
 CSRCS=
 CXXSRCS=KuContextMenu.cpp KuMenuSet.cpp KuShellExtension.cpp KuShellExtInit.cpp KuShellExtensionFactory.cpp StringConv.cpp FSLinks/FSLinks.cpp FSLinks/Misc.cpp FSLinks/Reparse_Dir_HANDLE.cpp dll.cpp globals.cpp
@@ -56,7 +59,7 @@ pch: depend
 	sed -i 's/stdafx\.h/stdafx.h.gch/g' Makefile.deps
 
 $(target): $(objects)
-	$(DLLWRAP) --def KuShellExtension.def -o $@ $^ $(LDFLAGS)
+	$(CXX) $(CXXFLAGS) -o $@ KuShellExtension.def $^ $(LDFLAGS)
 	$(STRIP) $@
 ifeq ($(B),win32)
 	upx --lzma -9 $@

@@ -580,7 +580,7 @@ public:
 		m_pData->Normalize();
 		STRT sRet = m_pData->m_sData;
 		m_pData->m_sData = NULL;
-		m_pData->Release();
+		Empty();
 		return sRet;
 	}
 
@@ -1083,19 +1083,6 @@ public:
 	{ Init(); LoadString(hInstance, nID); }
 	explicit CKuStringT(UINT nID)
 	{ Init(); LoadString(nID); }
-#endif
-
-// simple hash function for CMap
-#ifdef _MSC_VER
-	operator ULONG_PTR() const
-	{
-		ULONG_PTR ret = 0;
-		STRT ptr = (STRT) &ret;
-		int i;
-		for (i = 0;i < sizeof(ULONG_PTR) / sizeof(T) && i < GetLength();i++)
-			ptr[i] = m_pData->m_sString[i];
-		return ret;
-	}
 #endif
 private:
 	static const T m_sNULL;
