@@ -17,6 +17,13 @@ RANLIB=$(CTARGET)ranlib
 DLLTOOL=$(CTARGET)dlltool
 DLLWRAP=$(CTARGET)dllwrap --driver-name $(CXX) --dlltool-name $(DLLTOOL)
 
+ifneq (,$(findstring -D_DEBUG,$(MYCFLAGS)))
+DEBUG=1
+CFLAGS+=-g -O2
+else
+CFLAGS+=-O3 -fomit-frame-pointer -DNDEBUG
+endif
+
 INCLUDES=-Igdiplus -I. -I..
 UNICODE_DEFS=-DUNICODE -D_UNICODE
 LDFLAGS=-shared -lshlwapi -luuid -lgdi32 -lole32 -Wl,--enable-stdcall-fixup
@@ -48,21 +55,34 @@ clean:
 distclean: clean
 	$(RM) $(target)
 
-depend:
+depend: Makefile.deps
 	echo -n >Makefile.deps
-ifdef CSRCS
+ifneq (,$(CSRCS))
 	$(CC) -MM $(CFLAGS) $(CSRCS) >>Makefile.deps
 endif
+ifneq (,$(CXXSRCS))
 	$(CXX) -MM $(CXXFLAGS) $(CXXSRCS) >>Makefile.deps
+endif
 
 pch: depend
 	sed -i 's/stdafx\.h/stdafx.h.gch/g' Makefile.deps
 
+Makefile.deps: $(CSRCS) $(CXXSRCS)
+	echo -n >Makefile.deps
+ifneq (,$(CSRCS))
+	$(CC) -MM $(CFLAGS) $(CSRCS) >>Makefile.deps
+endif
+ifneq (,$(CXXSRCS))
+	$(CXX) -MM $(CXXFLAGS) $(CXXSRCS) >>Makefile.deps
+endif
+
 $(target): $(objects)
 	$(CXX) $(CXXFLAGS) -o $@ KuShellExtension.def $^ $(LDFLAGS)
+ifndef DEBUG
 	$(STRIP) $@
 ifeq ($(B),win32)
 	upx --lzma -9 $@
+endif
 endif
 
 %.coff: %.rc
@@ -71,4 +91,4 @@ endif
 %.gch: %
 	$(CXX) $(CXXFLAGS) -o $@ $<
 
-include Makefile.deps
+-include Makefile.deps
