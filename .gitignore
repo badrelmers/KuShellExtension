@@ -9,10 +9,13 @@
 *.a
 *.d
 *.o
-CVS/
 Release*/
 Debug*/
 x64/
+
+.hg/
+.svn/
+CVS/
 
 Makefile.deps
 KuShellExtension/
