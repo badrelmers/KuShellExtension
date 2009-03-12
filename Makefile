@@ -56,13 +56,6 @@ distclean: clean
 	$(RM) $(target)
 
 depend: Makefile.deps
-	echo -n >Makefile.deps
-ifneq (,$(CSRCS))
-	$(CC) -MM $(CFLAGS) $(CSRCS) >>Makefile.deps
-endif
-ifneq (,$(CXXSRCS))
-	$(CXX) -MM $(CXXFLAGS) $(CXXSRCS) >>Makefile.deps
-endif
 
 pch: depend
 	sed -i 's/stdafx\.h/stdafx.h.gch/g' Makefile.deps
