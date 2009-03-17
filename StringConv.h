@@ -6,6 +6,8 @@
 
 #ifdef _WIN32
 
+#define IsValidUTF8(sUTF8, cch) MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, (sUTF8), (cch), NULL, 0)
+
 LPCWSTR StringUTF8ToWChar(LPCSTR sUTF8, CStringW &sWChar, int iChars = -1);
 LPCWSTR StringCharToWChar(LPCSTR sChar, CStringW &sWChar, int iChars = -1, UINT codepage = CP_ACP);
 LPCSTR StringWCharToUTF8(LPCWSTR sWChar, CStringA &sUTF8, int iChars = -1);
