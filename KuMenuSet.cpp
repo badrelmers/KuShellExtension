@@ -169,11 +169,13 @@ void CKuMenuSet::PraseMenuItems(pug::xml_node &node, CMenuItem *pItem)
 								pItem->m_dwMultiItems = 0;
 								break;
 							}
-							if (ptr[1] >= _T('2') && ptr[1] <= _T('9')) {
-								pItem->m_dwMultiItems = (DWORD) ptr[1] - (DWORD) _T('0');
-								break;
+							else if (ptr[1] >= _T('2') && ptr[1] <= _T('9')) {
+								DWORD n = (DWORD) ptr[1] - (DWORD) _T('0');
+								if (pItem->m_dwMultiItems < n)
+									pItem->m_dwMultiItems = n;
+								ptr++;
 							}
-							if (ptr[1] == _T('%'))
+							else if (ptr[1] == _T('%'))
 								ptr++;
 						}
 					}
