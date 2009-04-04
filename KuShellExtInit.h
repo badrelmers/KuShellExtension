@@ -43,6 +43,7 @@ public:
 	CKuShellExtInitData() : m_bFromFolderBk(false) {}
 
 	bool m_bFromFolderBk;
+	bool m_bIsDirectory;
 	CAtlArray<CString> m_aFiles;
 };
 

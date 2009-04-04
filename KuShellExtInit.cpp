@@ -79,6 +79,7 @@ HRESULT STDMETHODCALLTYPE CKuShellExtInit::Initialize(
         }
 
 		m_pData->m_bFromFolderBk = false;
+		m_pData->m_bIsDirectory = PathIsDirectory(m_pData->m_aFiles[0]);
     }
 	else if (pidlFolder) {
 		m_pData->m_aFiles.SetCount(1);
@@ -86,6 +87,7 @@ HRESULT STDMETHODCALLTYPE CKuShellExtInit::Initialize(
 		m_pData->m_aFiles[0].ReleaseBuffer();
 
 		m_pData->m_bFromFolderBk = true;
+		m_pData->m_bIsDirectory = true;
 	}
 
 	if (m_pData->GetRefCount() > 1)

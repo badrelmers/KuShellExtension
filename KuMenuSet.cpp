@@ -542,7 +542,7 @@ void CKuMenuSet::InitBuiltinVars()
 #endif
 }
 
-bool CKuMenuSet::CMenuItem::IsOurPath(LPCTSTR sPath)
+bool CKuMenuSet::CMenuItem::IsOurPath(LPCTSTR sPath, bool bDir)
 {
 	ASSERT(sPath);
 
@@ -550,7 +550,7 @@ bool CKuMenuSet::CMenuItem::IsOurPath(LPCTSTR sPath)
 
 	if (sClasses.IsEmpty())
 		sClasses = _T('*');
-	if (PathIsDirectory(sPath))
+	if (bDir)
 		sClass = _T("folder");
 	else
 		sClass = PathFindExtension(sPath);
@@ -590,7 +590,7 @@ bool CKuMenuSet::CMenuItem::ShouldShown()
 			if (pItem->ShouldShown()) {
 				if (m_sClasses.IsEmpty())
 					return true;
-				return IsOurPath(m_pKuMenuSet->m_pData->m_aFiles[0]);
+				return IsOurPath(m_pKuMenuSet->m_pData->m_aFiles[0], m_pKuMenuSet->m_pData->m_bIsDirectory);
 			}
 		return false;
 	}
@@ -624,7 +624,8 @@ bool CKuMenuSet::CMenuItem::ShouldShown()
 												CString sLine;
 												for (LPCWSTR ptr = str;*ptr && *ptr != L'\r' && *ptr != L'\n';ptr++)
 													sLine += *ptr;
-												ret = !!PathFileExists(sLine);
+												ret = (_istalpha(sLine[0]) && sLine[1] == _T(':') || sLine[0] == _T('\\') && sLine[1] == _T('\\')) &&
+													PathFileExists(sLine);
 												GlobalUnlock(hText);
 											}
 										}
@@ -642,8 +643,8 @@ bool CKuMenuSet::CMenuItem::ShouldShown()
 			// no break!!
 		case ACT_EXECUTE:
 			if (m_sClasses.IsEmpty() && m_pParent)
-				return m_pParent->IsOurPath(m_pKuMenuSet->m_pData->m_aFiles[0]);
-			return IsOurPath(m_pKuMenuSet->m_pData->m_aFiles[0]);
+				return m_pParent->IsOurPath(m_pKuMenuSet->m_pData->m_aFiles[0], m_pKuMenuSet->m_pData->m_bIsDirectory);
+			return IsOurPath(m_pKuMenuSet->m_pData->m_aFiles[0], m_pKuMenuSet->m_pData->m_bIsDirectory);
 	}
 	return false;
 }

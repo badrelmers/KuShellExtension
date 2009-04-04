@@ -64,7 +64,7 @@ class CKuMenuSet
 
 		bool IsSubMenu() { return m_pFirstChild != NULL; }
 		bool IsSeparator() { return !m_sName.Compare(_T("----")); }
-		bool IsOurPath(LPCTSTR sPath);
+		bool IsOurPath(LPCTSTR sPath, bool bDir);
 		bool ShouldShown();
 
 		void QueryContextMenu(HMENU hMenu, UINT &indexMenu, UINT &idCmdFirst, UINT idCmdLast, UINT uFlags);
