@@ -161,6 +161,8 @@ private:
 	static CAtlMap<CString, CString> m_BuiltinVars;
 	CAtlMap<UINT, CMenuItem *> m_cmd;
 
+	bool m_bVistaStyle;
+
 	void PraseMenuItems(pug::xml_node &node, CMenuItem *pItem);
 };
 

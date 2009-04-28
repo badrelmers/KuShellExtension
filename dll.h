@@ -59,6 +59,9 @@ DECLARE_DLL_PROC(GdipCreateBitmapFromHICON, "gdiplus", Gdiplus::GpStatus, WINGDI
 DECLARE_DLL_PROC(GdipCreateHBITMAPFromBitmap, "gdiplus", Gdiplus::GpStatus, WINGDIPAPI, (Gdiplus::GpBitmap* bitmap, HBITMAP* hbmReturn, Gdiplus::ARGB background))
 DECLARE_DLL_PROC(GdipDisposeImage, "gdiplus", Gdiplus::GpStatus, WINGDIPAPI, (Gdiplus::GpImage *image))
 
+DECLARE_DLL_PROC(IsAppThemed, "uxtheme", BOOL, WINAPI, ())
+DECLARE_DLL_PROC(IsThemeActive, "uxtheme", BOOL, WINAPI, ())
+
 #undef DECLARE_DLL_PROC
 #if defined(DLL_DEFINE)
 	#define DLL_GETPROCADDR

@@ -224,11 +224,8 @@ void CKuMenuSet::PraseMenuItems(pug::xml_node &node, CMenuItem *pItem)
 #endif
 				if (PathFileExists(pIcon)) {
 					ExtractIconEx(pIcon, i, NULL, &pItem->m_hIcon, 1);
-					if (pItem->m_hIcon && ku::SysVer.m_vMajor >= 6) {
+					if (pItem->m_hIcon && ku::SysVer.m_vMajor >= 6)
 						pItem->m_hBitmap = CKuContextMenu::IconToBitmap(pItem->m_hIcon);
-						DestroyIcon(pItem->m_hIcon);
-						pItem->m_hIcon = NULL;
-					}
 				}
 #ifndef _WIN64
 				if (dll::Wow64RevertWow64FsRedirection)
@@ -463,8 +460,10 @@ UINT CKuMenuSet::DetectCodePage(const BYTE *pBuffer, DWORD uLen)
 
 HRESULT CKuMenuSet::QueryContextMenu(HMENU hMenu, UINT indexMenu, UINT idCmdFirst, UINT idCmdLast, UINT uFlags)
 {
-	CMenuItem *pItem;;
+	CMenuItem *pItem;
 	UINT id = idCmdFirst + 1; // start from offset 1
+
+	m_bVistaStyle = ku::SysVer.m_vMajor >= 6 && dll::IsThemeActive();
 
 	m_cmd.RemoveAll();
 	for (pItem = m_pFirstItem;pItem;pItem = pItem->m_pNextSibling)
@@ -677,7 +676,7 @@ void CKuMenuSet::CMenuItem::QueryContextMenu(HMENU hMenu, UINT &indexMenu, UINT 
 	}
 	else {
 		mi.fMask = (IsSubMenu() ? MIIM_SUBMENU : 0) | MIIM_ID | MIIM_FTYPE | MIIM_STRING |
-			(((UINT_PTR) m_hIcon | (UINT_PTR) m_hBitmap) ? MIIM_BITMAP : 0);
+			(m_hIcon ? MIIM_BITMAP : 0);
 		mi.fType = MFT_STRING;
 		if (IsSubMenu())
 			mi.hSubMenu = hSubMenu;
@@ -685,8 +684,8 @@ void CKuMenuSet::CMenuItem::QueryContextMenu(HMENU hMenu, UINT &indexMenu, UINT 
 		mi.wID = idCmdFirst++;
 		mi.dwTypeData = m_sName.GetBuffer();
 		mi.cch = m_sName.GetLength();
-		if ((UINT_PTR) m_hIcon | (UINT_PTR) m_hBitmap)
-			mi.hbmpItem = m_hBitmap ? m_hBitmap : HBMMENU_CALLBACK;
+		if (m_hIcon)
+			mi.hbmpItem = m_hBitmap && m_pKuMenuSet->m_bVistaStyle ? m_hBitmap : HBMMENU_CALLBACK;
 	}
 
 	::InsertMenuItem(hMenu, indexMenu++, TRUE, &mi);
