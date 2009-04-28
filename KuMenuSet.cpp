@@ -463,7 +463,7 @@ HRESULT CKuMenuSet::QueryContextMenu(HMENU hMenu, UINT indexMenu, UINT idCmdFirs
 	CMenuItem *pItem;
 	UINT id = idCmdFirst + 1; // start from offset 1
 
-	m_bVistaStyle = ku::SysVer.m_vMajor >= 6 && dll::IsThemeActive();
+	m_bVistaStyle = ku::SysVer.m_vMajor >= 6 && dll::IsThemeActive && dll::IsThemeActive();
 
 	m_cmd.RemoveAll();
 	for (pItem = m_pFirstItem;pItem;pItem = pItem->m_pNextSibling)
