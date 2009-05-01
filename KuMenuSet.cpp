@@ -993,7 +993,8 @@ DWORD WINAPI CKuMenuSet::CMenuItem::ShellExecuteThread(LPVOID lpParameter)
 		}
 		ShellExecuteEx(&shexec);
 		if (shexec.hProcess) {
-			WaitForSingleObject(shexec.hProcess, INFINITE);
+			if (i < count - 1 || !pShellExecuteThread->m_sTempFile.IsEmpty()) // don't wait for the last process
+				WaitForSingleObject(shexec.hProcess, INFINITE);
 			CloseHandle(shexec.hProcess);
 		}
 	}
