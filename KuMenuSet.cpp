@@ -988,7 +988,7 @@ DWORD WINAPI CKuMenuSet::CMenuItem::ShellExecuteThread(LPVOID lpParameter)
 		if (pShellExecuteThread->m_bConsole)
 			shexec.lpParameters = PathGetArgs(aCmds[i]);
 		else {
-			sFile.Format(_T("/c %s"), aCmds[i].GetString());
+			sFile.Format(_T("/c \"%s\""), aCmds[i].GetString());
 			shexec.lpParameters = sFile;
 		}
 		ShellExecuteEx(&shexec);
