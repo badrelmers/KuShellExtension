@@ -28,8 +28,12 @@ class CKuMenuSet
 {
 	friend class CMenuItem;
 
+public:
 	class CMenuItem
 	{
+	public:
+		HICON GetIcon() const { return m_hIcon; }
+	private:
 		friend class CKuMenuSet;
 
 		enum ACTION {
@@ -123,7 +127,7 @@ class CKuMenuSet
 			bool m_bConsole;
 		};
 	};
-public:
+
 	CKuMenuSet();
 	virtual ~CKuMenuSet();
 
@@ -143,9 +147,6 @@ public:
 	bool InvokeCommand(UINT id)
 	{ CMenuItem *pItem; if (m_cmd.Lookup(id, pItem)) return pItem->InvokeCommand(); return false; }
 
-	HICON GetMenuIcon(UINT id)
-	{ CMenuItem *pItem; if (m_cmd.Lookup(id, pItem)) return pItem->m_hIcon; return NULL; }
-
 	static UINT DetectCodePage(const BYTE *pBuffer, DWORD uLen);
 	static bool IsNumber(LPCTSTR str);
 	static void InitBuiltinVars();
@@ -162,6 +163,7 @@ private:
 	CAtlMap<UINT, CMenuItem *> m_cmd;
 
 	bool m_bVistaStyle;
+	UINT m_idCmdFirst;
 
 	void PraseMenuItems(pug::xml_node &node, CMenuItem *pItem);
 };

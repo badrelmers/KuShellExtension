@@ -84,7 +84,7 @@ namespace Gdiplus {
 
 #ifndef TRACE
 	#ifdef _DEBUG
-		#ifdef HAVE_ATL
+		#if defined(HAVE_ATL) || defined(ATLTRACE)
 			#include <atlbase.h>
 			#define TRACE(...) ATLTRACE(atlTraceGeneral, 0, __VA_ARGS__)
 		#else

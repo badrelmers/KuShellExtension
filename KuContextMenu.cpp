@@ -24,7 +24,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 // CKuContextMenu
 //////////////////////////////////////////////////////////////////////////////////////
-//UINT CKuContextMenu::m_idCmdFirst = 0;
 
 HRESULT STDMETHODCALLTYPE CKuContextMenu::QueryInterface( 
 	/* [in] */ REFIID riid,
@@ -194,7 +193,7 @@ HRESULT STDMETHODCALLTYPE CKuContextMenu::HandleMenuMsg2(
 				DRAWITEMSTRUCT* lpdis = (DRAWITEMSTRUCT*)lParam;
 				if ((lpdis==NULL)||(lpdis->CtlType != ODT_MENU))
 					return S_OK; //not for a menu
-				HICON hIcon = g_menu.GetMenuIcon(lpdis->itemID);
+				HICON hIcon = ((CKuMenuSet::CMenuItem *) lpdis->itemData)->GetIcon();
 				if (hIcon == NULL)
 					return S_OK;
 				DrawIconEx(lpdis->hDC,
