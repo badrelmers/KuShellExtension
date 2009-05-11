@@ -20,6 +20,9 @@ VARIABLES
 
     built-in variables:
         CONFIG: The path of configuration file.
+        KU_SHELL_EXTENSION_DIR: The directory which contains KuShellExtension.
+        KU_SHELL_EXTENSION_DRIVE: The drive (e.g. C:) which contains KuShellExtension.
+
         Arch: Expand to 32 on 32bits Windows, 64 on 64bits Windows (even in WOW64 mode).
         ArchName: "x86" or "x64", depend on OS (not CPU).
         SysDir:
@@ -46,7 +49,17 @@ VARIABLES
         Other available varables:
           Pictures, CommonPictures, Music, CommonMusic, Video, CommonVideo,
           Desktop, CommonDesktop, Startup, CommonStartup
+
+    configure purpose varables:
+    	These varables will affect in some way, you shouldn't use them other than configure KuShellExtension.
+
+    	LEGACY_STYLE (boolean):
+    	    You should enable this if you are using some third-party theme in Vista and the icons aren't drawn properly.
+    	HIDE_MISSING (boolean):
+    	    Enable this to hide the entries that pointer to the programs when aren't existed.
 -->
+    <var name="LEGACY_STYLE">false</var>
+    <var name="HIDE_MISSING">false</var>
 
 	<var name="7zDir">${var:ProgramFiles64}\7-Zip</var>
 	<var name="7zG">${var:7zDir}\7zG.exe</var>
@@ -71,110 +84,112 @@ VARIABLES
 MENUS
 
 SYNOPSIS
-	<menu name="NAME"
-		class="CLASSES"
-		icon="ICON">
-		<menuitem name="NAME"
-			class="CLASSES"
-			icon="ICON"
-			action="execute|builtin"
-			console="true|false"
-			multiple="N"
-			>
-			ACTION
-		</menuitem>
-	</menu>
+    <menu name="NAME"
+        class="CLASSES"
+        icon="ICON">
+        <menuitem name="NAME"
+            class="CLASSES"
+            icon="ICON"
+            action="execute|builtin"
+            console="true|false"
+            multiple="N"
+            >
+            ACTION
+        </menuitem>
+    </menu>
 
-	<for V="V1 V2 V3..." U="U1 U2 U3" ...>...</for>
+    <for V="V1 V2 V3..." U="U1 U2 U3" ...>...</for>
 
 DESCRIPTION
-	<menu>...</menu>
-		Define a submenu.
-	<menuitem>...</menutiem>
-		Define a leaf entry of menu. To create a separator, use "----" (four hyphens) as the name. (<menuitem name="----" />)
-	<for V="V1 V2 V3..." U="U1 U2 U3 ..." ...>...</for>
-		For ... in loop, ${var:V} and ${var:U} are available in the <for></for> scope.
+    <menu>...</menu>
+        Define a submenu.
+    <menuitem>...</menutiem>
+        Define a leaf entry of menu. To create a separator, use "----" (four hyphens) as the name. (<menuitem name="----" />)
+    <for V="V1 V2 V3..." U="U1 U2 U3 ..." ...>...</for>
+        For ... in loop, ${var:V} and ${var:U} are available in the <for></for> scope.
 
 ATTRIBUTES
-	"name="
-		The string shown on the menu.
+    "name="
+        The string shown on the menu.
 
-	"icon="
-		The path of icon shown on the the menu, it can be a DLL, excuatable file (EXE), or icon file (ICO). If there are multiple icons in a file, an optional index can be append to the path with a comma. If the icon is not specified in a menu entry, the icon of the application would be used.
+    "icon="
+        The path of icon shown on the the menu, it can be a DLL, excuatable file (EXE), or icon file (ICO). If there are multiple icons in a file, an optional index can be append to the path with a comma. If the icon is not specified in a menu entry, the icon of the application would be used.
 
-		Ex. icon="C:\Windows\System32\shell32.dll,2"
-			will use the third icon in "shell32.dll", the index is counted from zero.
-			
-	"class="
-		Specify the menu entry or the submenu should show on what situations. The following formats are allowed.
-		.???		Matches file extension
-		*			Matches all files
-		folder		Matches all folders
+        Ex. icon="C:\Windows\System32\shell32.dll,2"
+            will use the third icon in "shell32.dll", the index is counted from zero.
+            
+    "class="
+        Specify the menu entry or the submenu should show on what situations. The following formats are allowed.
+        .???        Matches file extension
+        *           Matches all files
+        folder      Matches all folders
 
-		If the class of a submenu(<menu>) is not specified, it will be shown if there is a child entry should be shown. On the other hand, if the class of a menu(<menuitem>) is not specified, it will use it parent setting if it exists, or "*" will be used.
+        If the class of a submenu(<menu>) is not specified, it will be shown if there is a child entry should be shown. On the other hand, if the class of a menu(<menuitem>) is not specified, it will use it parent setting if it exists, or "*" will be used.
 
-	"action="
-		The type of the action when user click on the menu entry, current only two type are available. The first is "execute", which is the default, it means execute the command line defined in the (text) node. The second is "builtin", which means the action is pre-defined by KuShellExtension, see BUILTIN ACTIONS section for details.
+    "action="
+        The type of the action when user click on the menu entry, current only two type are available. The first is "execute", which is the default, it means execute the command line defined in the (text) node. The second is "builtin", which means the action is pre-defined by KuShellExtension, see BUILTIN ACTIONS section for details.
 
-	"console="
-		Set this to true if the application is a console program and you would like to hide the command prompt window. Don't use it with normal GUI programs.
+    "console="
+        Set this to true if the application is a console program and you would like to hide the command prompt window. Don't use it with normal GUI programs.
 
-	"multiple="
-		Specify the number of arguments the action supports. The menu entry will only be shown when the number of files/folders is selected. Set it to 0 means it is unlimited. If this value is not specified, KuShellExtension tries to detect it by the command line.
+    "multiple="
+        Specify the number of arguments the action supports. The menu entry will only be shown when the number of files/folders is selected. Set it to 0 means it is unlimited. If this value is not specified, KuShellExtension tries to detect it by the command line.
 
 ACTIONS
-	Normal actions is described as a command line, for the usability, some (dynamic) variables are allowed (see % EXPENSION below). Note you may need to use quotes for the strings that contains spaces, but do not use " directly, because it is not allowed in XML, use &quot; instead.
+    Normal actions is described as a command line, for the usability, some (dynamic) variables are allowed (see % EXPENSION below). Note you may need to use quotes for the strings that contains spaces, but do not use " directly, because it is not allowed in XML, use &quot; instead.
 
 % EXPENSION
-	%1 %2 %3 ... %9
-		Expand to the first, second, third, ... file the user selected.
-	%w
-		Expand to the working directory.
-	%z
-		Expand to archive name, useful with WinZIP/WinRAR/7-Zip etc. See the example below.
-	%*
-		Expand to all files the user selected. DO NOT USE QUOTES WITH THIS.
-	%@
-		The same with the above, except the command will be executed separately. For example, the user selected 10 files and click the menu entry, then the command would be executed 10 times. DO NOT USE QUOTES WITH THIS.
-	%u[N]
-		Generates a UTF-8 encoded file name list and expand to the path of the list file. N is a number that tells KuShellExtension should skip first N files. This is used by WinRAR, which need to skip first file.
-	%L[N]
-		Generates a UTF-16 encoded file name list and expand to the path of the list file.
-	%l[N]
-		Generates a system codepage encoded file name list and expand to the path of the list file.
-	%c[N]
-		Expand to the file path in the clipboard, you could copy the files from explorer or copy them as text. N is the index of files in clipboard, which is counted from zero. (%c0 -> first file, %c1 -> second file, ...)
-	%%
-		Expand to '%' character.
+    %1 %2 %3 ... %9
+        Expand to the first, second, third, ... file the user selected.
+    %w
+        Expand to the working directory.
+    %z
+        Expand to archive name, useful with WinZIP/WinRAR/7-Zip etc. See the example below.
+    %*
+        Expand to all files the user selected. DO NOT USE QUOTES WITH THIS.
+    %@
+        The same with the above, except the command will be executed separately. For example, the user selected 10 files and click the menu entry, then the command would be executed 10 times. DO NOT USE QUOTES WITH THIS.
+    %u[N]
+        Generates a UTF-8 encoded file name list and expand to the path of the list file. N is a number that tells KuShellExtension should skip first N files. This is used by WinRAR, which need to skip first file.
+    %L[N]
+        Generates a UTF-16 encoded file name list and expand to the path of the list file.
+    %l[N]
+        Generates a system codepage encoded file name list and expand to the path of the list file.
+    %c[N]
+        Expand to the file path in the clipboard, you could copy the files from explorer or copy them as text. N is the index of files in clipboard, which is counted from zero. (%c0 -> first file, %c1 -> second file, ...)
+    %%
+        Expand to '%' character.
 
 PREFIX OF % EXPENSION
-	Some prefix can be use in % EXPENSION, the format is like Windows Command Prompt. The following are available prefix characters.
+    Some prefix can be use in % EXPENSION, the format is like Windows Command Prompt. The following are available prefix characters.
 
-	d
-		Drive letter.
-	p
-		Directory without drive letter.
-	n
-		File name without extension.
-	x
-		File extension.
-	s
-		System codepage compatible path, substitutes incompatible parts with 8.3 short file name.
+    d
+        Drive letter.
+    p
+        Directory without drive letter.
+    n
+        File name without extension.
+    x
+        File extension.
+    s
+        System codepage compatible path, substitutes incompatible parts with 8.3 short file name.
 
-	Ex. %1 = "C:\path\to\the\file.txt"
-		%~d1 = "C:"
-		%~p1 = "\path\to\the\"
-		%~dp1 = "C:\path\to\the\"
-		%~nx1 = "file.txt"
-		%~dpn1 = "C:\path\to\the\file"
+    Ex. %1 = "C:\path\to\the\file.txt"
+        %~d1 = "C:"
+        %~p1 = "\path\to\the\"
+        %~dp1 = "C:\path\to\the\"
+        %~nx1 = "file.txt"
+        %~dpn1 = "C:\path\to\the\file"
 
 BUILTIN ACTIONS
-	DropSymLinks [0|1]
-		Create symbolic links (>= Vista), the target of links are taken from clipboard. This command takes one argument with the value 0 or 1. Use 0 to create the links with relative path, 1 to create the links with absolute path.
-	DropJunctions
-		Create junctions.
-	DropHardLinks
-		Create hard links.
+    DropSymLinks [0|1]
+        Create symbolic links (>= Vista), the target of links are taken from clipboard. This command takes one argument with the value 0 or 1. Use 0 to create the links with relative path, 1 to create the links with absolute path.
+    DropJunctions
+        Create junctions.
+    DropHardLinks
+        Create hard links.
+    Reload
+        Reload the config file.
 -->
 	<menu name="AppLocale" icon="${var:AppLoc}">
 		<for lang="Japanese Chinese(Trad.) Chinese(Simp.)" id="0411 0404 0804" icon="107 216 43">
