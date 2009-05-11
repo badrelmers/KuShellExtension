@@ -198,12 +198,25 @@ void CKuMenuSet::PraseMenuItems(pug::xml_node &node, CMenuItem *pItem)
 						}
 					}
 				}
-				if (sIcon.IsEmpty() && pItem->m_eAction == CMenuItem::ACT_EXECUTE) {
-					sIcon = pItem->m_sAction;
-					LPTSTR pIcon = sIcon.GetBuffer();
+				bool bHideMissing = GetBoolean(_T("HIDE_MISSING"));
+				if ((sIcon.IsEmpty() || bHideMissing) && pItem->m_eAction == CMenuItem::ACT_EXECUTE) {
+					CString sProg = pItem->m_sAction;
+					LPTSTR pIcon = sProg.GetBuffer();
 					PathRemoveArgs(pIcon);
 					PathUnquoteSpaces(pIcon);
-					sIcon.ReleaseBuffer();
+					sProg.ReleaseBuffer();
+					// drop the entries which use the missing programs.
+					// we should check the file existence here, because checking them on-the-fly may be very slow.
+					if (bHideMissing && !PathFileExists(sProg)) {
+						pItem->m_sName.Empty();
+						pItem->m_sClasses.Empty();
+						pItem->m_eAction = CMenuItem::ACT_EXECUTE;
+						pItem->m_bConsole = false;
+						pItem->m_dwMultiItems = 1;
+						continue;
+					}	
+					if (sIcon.IsEmpty())
+						sIcon = sProg;
 				}
 				Substitute(node.attribute(_T("console")).value(), str, pItem);
 				pItem->m_bConsole = !!str.CompareNoCase(_T("false"));
@@ -244,6 +257,7 @@ void CKuMenuSet::PraseMenuItems(pug::xml_node &node, CMenuItem *pItem)
 				PraseMenuItems(child, pItem->m_pFirstChild);
 #endif
 			}
+			// this waste some spaces, since the last node in each group is not used.
 			pItem->m_pNextSibling = new CMenuItem(this);
 			pItem->m_pNextSibling->m_pPrevSibling = pItem;
 			pItem->m_pNextSibling->m_pParent = pItem->m_pParent;
@@ -292,6 +306,7 @@ void CKuMenuSet::PraseMenuItems(pug::xml_node &node, CMenuItem *pItem)
 				pChild = pItem->GetLastChild();
 			}
 			if (pItem->m_pFirstChild) {
+				// mount children nodes to the parent of pItem
 				for (pChild = pItem->m_pFirstChild;pChild;pChild = pChild->m_pNextSibling)
 					pChild->m_pParent = pItem->m_pParent;
 				pChild = pItem->GetLastChild();
@@ -427,6 +442,12 @@ bool CKuMenuSet::GetVariable(LPCTSTR key, CString &value, CMenuItem *pItem/* = N
 	return (GetOurVariable(key, value, pItem) || value.GetEnvironmentVariable(key));
 }
 
+bool CKuMenuSet::GetBoolean(LPCTSTR key, bool bDefault/* = false*/, CMenuItem *pItem/* = NULL*/)
+{
+	CString sValue;
+	return GetOurVariable(key, sValue) ? (!_tcscmp(sValue, _T("1")) || !_tcsicmp(sValue, _T("true"))) : bDefault;
+}
+
 bool CKuMenuSet::IsNumber(LPCTSTR str)
 {
 	for (;*str;str++)
@@ -465,8 +486,7 @@ HRESULT CKuMenuSet::QueryContextMenu(HMENU hMenu, UINT indexMenu, UINT idCmdFirs
 	m_idCmdFirst = idCmdFirst; // used by submenu parents
 	UINT id = idCmdFirst + 1; // start from offset 1
 
-	CString sValue;
-	if (m_vars.Lookup(_T("LEGACY_STYLE"), sValue) && (sValue == _T("1") || !_tcsicmp(sValue, _T("true"))))
+	if (GetBoolean(_T("LEGACY_STYLE")))
 		m_bVistaStyle = false;
 	else
 		m_bVistaStyle = ku::SysVer.m_vMajor >= 6 && dll::IsThemeActive && dll::IsThemeActive();

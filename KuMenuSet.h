@@ -142,6 +142,7 @@ public:
 	LPCTSTR Substitute(LPCTSTR src, CString &dest, CMenuItem *pItem = NULL);
 	bool GetVariable(LPCTSTR key, CString &value, CMenuItem *pItem = NULL);
 	bool GetOurVariable(LPCTSTR key, CString &value, CMenuItem *pItem = NULL);
+	bool GetBoolean(LPCTSTR key, bool bDefault = false, CMenuItem *pItem = NULL);
 
 	HRESULT QueryContextMenu(HMENU hMenu, UINT indexMenu, UINT idCmdFirst, UINT idCmdLast, UINT uFlags);
 	bool InvokeCommand(UINT id)
