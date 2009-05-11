@@ -690,7 +690,7 @@ void CKuMenuSet::CMenuItem::QueryContextMenu(HMENU hMenu, UINT &indexMenu, UINT 
 
 	HMENU hSubMenu;
 	if (IsSubMenu()) {
-		hSubMenu = CreateMenu();
+		hSubMenu = CreatePopupMenu();
 		UINT i = 0;
 		CMenuItem *pItem;
 
