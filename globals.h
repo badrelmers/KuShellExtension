@@ -42,6 +42,7 @@ extern BOOL bIsWow64;
 
 extern HMODULE hModule;
 extern CString sModulePath;
+extern CString sModuleDir;
 extern TCHAR *sBlackList[];
 extern SYSVER SysVer;
 

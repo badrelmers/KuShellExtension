@@ -176,7 +176,7 @@ void CKuMenuSet::PraseMenuItems(pug::xml_node &node, CMenuItem *pItem)
 				pItem->m_dwMultiItems = 1;
 				if (node.has_attribute(_T("multiple")))
 					pItem->m_dwMultiItems = (DWORD) _ttoi(Substitute(node.attribute(_T("multiple")).value(), str, pItem));
-				else {
+				else if (pItem->m_eAction == CMenuItem::ACT_EXECUTE) {
 					for (LPCTSTR ptr = pItem->m_sAction;*ptr;ptr++) {
 						if (ptr[0] == _T('%')) {
 							if (ptr[1] == _T('~')) {
@@ -505,6 +505,8 @@ void CKuMenuSet::InitBuiltinVars()
 	m_BuiltinVars.RemoveAll();
 
 	m_BuiltinVars.SetAt(_T("CONFIG"), ku::sConfigFile);
+	m_BuiltinVars.SetAt(_T("KU_SHELL_EXTENSION_DIR"), ku::sModuleDir);
+	m_BuiltinVars.SetAt(_T("KU_SHELL_EXTENSION_DRIVE"), ku::sModulePath.Left(2));
 
 	prog.GetEnvironmentVariable(_T("ProgramFiles"));
 	m_BuiltinVars.SetAt(_T("ProgramFiles"), prog);
@@ -600,6 +602,8 @@ CKuMenuSet::CMenuItem::CMD_ID CKuMenuSet::CMenuItem::GetCmdId(LPCTSTR sCmd)
 		return CMD_ID_DROP_JUNCTIONS;
 	else if (!_tcscmp(sCmd, _T("DropHardLinks")))
 		return CMD_ID_DROP_HARDLINKS;
+	else if (!_tcscmp(sCmd, _T("Reload")))
+		return CMD_ID_RELOAD;
 	return CMD_ID_NULL;
 }
 
@@ -657,6 +661,9 @@ bool CKuMenuSet::CMenuItem::ShouldShown()
 									}
 									CloseClipboard();
 								}
+								break;
+							case CMD_ID_RELOAD:
+								ret = true;
 								break;
 						}
 					}
@@ -970,6 +977,9 @@ bool CKuMenuSet::CMenuItem::InvokeCommand()
 									}
 									CloseClipboard();
 								}
+								break;
+							case CMD_ID_RELOAD:
+								ku::cfgFileInfo.nFileSizeLow = ku::cfgFileInfo.nFileSizeHigh = 0; // will reload at the next time
 								break;
 						}
 					}

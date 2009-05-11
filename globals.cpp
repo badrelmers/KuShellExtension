@@ -30,6 +30,7 @@ BOOL bIsWow64 = FALSE;
 
 HMODULE hModule = NULL;
 CString sModulePath;
+CString sModuleDir;
 TCHAR *sBlackList[] = {_T("utorrent.exe"), NULL};
 SYSVER SysVer = {0};
 
@@ -43,9 +44,14 @@ HRESULT LoadConfig()
 {
 	if (sConfigFile.IsEmpty()) {
 		sConfigFile = sModulePath;
-		LPTSTR ptr = _tcsrchr(sConfigFile.GetBufferSetLength(KU_MAX_PATH), _T('\\'));
-		if (ptr)
+		LPTSTR sConfig = sConfigFile.GetBufferSetLength(KU_MAX_PATH);
+		LPTSTR ptr = _tcsrchr(sConfig, _T('\\'));
+		if (ptr) {
+			*ptr = 0;
+			sModuleDir = sConfig;
+			*ptr = _T('\\');
 			_tcscpy(ptr + 1, _T("config.xml"));
+		}
 		sConfigFile.ReleaseBuffer();
 		CKuMenuSet::InitBuiltinVars();
 	}
