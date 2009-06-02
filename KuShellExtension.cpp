@@ -188,9 +188,11 @@ STDAPI DllRegisterServer()
 		SHSetValue(HKEY_CURRENT_USER, _T("Software\\Classes\\Drive\\shellex\\ContextMenuHandlers\\") + g_sName, NULL, REG_SZ, (LPCVOID) g_sCLSID.GetString(), dwClsidCcb) != ERROR_SUCCESS ||
 		SHSetValue(HKEY_CURRENT_USER, _T("Software\\Classes\\CLSID\\") + g_sCLSID, NULL, REG_SZ, (LPCVOID) g_sName.GetString(), dwNameCcb) != ERROR_SUCCESS ||
 		SHSetValue(HKEY_CURRENT_USER, _T("Software\\Classes\\CLSID\\") + g_sCLSID + _T("\\InProcServer32"), NULL, REG_SZ, (LPCVOID) ku::sModulePath.GetString(), (DWORD) (ku::sModulePath.GetLength() + 1) * sizeof(TCHAR)) != ERROR_SUCCESS ||
-		SHSetValue(HKEY_CURRENT_USER, _T("Software\\Classes\\CLSID\\") + g_sCLSID + _T("\\InProcServer32"), _T("ThreadingModel"), REG_SZ, (LPCVOID) _T("Apartment"), sizeof(_T("Apartment"))) != ERROR_SUCCESS ||
-		SHSetValue(HKEY_LOCAL_MACHINE, _T("Software\\Microsoft\\Windows\\CurrentVersion\\Shell Extensions\\Approved"), g_sCLSID, REG_SZ, (LPCVOID) g_sName.GetString(), dwNameCcb) != ERROR_SUCCESS)
+		SHSetValue(HKEY_CURRENT_USER, _T("Software\\Classes\\CLSID\\") + g_sCLSID + _T("\\InProcServer32"), _T("ThreadingModel"), REG_SZ, (LPCVOID) _T("Apartment"), sizeof(_T("Apartment"))) != ERROR_SUCCESS)
 		return SELFREG_E_CLASS;
+
+	// Require admininstrator's rights!
+	SHSetValue(HKEY_LOCAL_MACHINE, _T("Software\\Microsoft\\Windows\\CurrentVersion\\Shell Extensions\\Approved"), g_sCLSID, REG_SZ, (LPCVOID) g_sName.GetString(), dwNameCcb);
 
 	SHChangeNotify(SHCNE_ASSOCCHANGED, SHCNF_IDLIST, NULL, NULL);
 	return S_OK;
@@ -205,9 +207,11 @@ STDAPI DllUnregisterServer()
 		SHDeleteKey(HKEY_CURRENT_USER, _T("Software\\Classes\\Directory\\shellex\\ContextMenuHandlers\\") + g_sName) != ERROR_SUCCESS ||
 		SHDeleteKey(HKEY_CURRENT_USER, _T("Software\\Classes\\Directory\\Background\\shellex\\ContextMenuHandlers\\") + g_sName) != ERROR_SUCCESS ||
 		SHDeleteKey(HKEY_CURRENT_USER, _T("Software\\Classes\\Drive\\shellex\\ContextMenuHandlers\\") + g_sName) != ERROR_SUCCESS ||
-		SHDeleteKey(HKEY_CURRENT_USER, _T("Software\\Classes\\CLSID\\") + g_sCLSID) != ERROR_SUCCESS ||
-		SHDeleteValue(HKEY_LOCAL_MACHINE, _T("Software\\Microsoft\\Windows\\CurrentVersion\\Shell Extensions\\Approved"), g_sCLSID) != ERROR_SUCCESS)
+		SHDeleteKey(HKEY_CURRENT_USER, _T("Software\\Classes\\CLSID\\") + g_sCLSID) != ERROR_SUCCESS)
 		return SELFREG_E_CLASS;
+
+	// Require admininstrator's rights!
+	SHDeleteValue(HKEY_LOCAL_MACHINE, _T("Software\\Microsoft\\Windows\\CurrentVersion\\Shell Extensions\\Approved"), g_sCLSID);
 
 	SHChangeNotify(SHCNE_ASSOCCHANGED, SHCNF_IDLIST, NULL, NULL);
 	return S_OK;

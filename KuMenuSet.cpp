@@ -549,6 +549,7 @@ void CKuMenuSet::InitBuiltinVars()
 		// Win64
 		m_BuiltinVars.SetAt(_T("Arch"), _T("64"));
 		m_BuiltinVars.SetAt(_T("ArchName"), _T("x64"));
+		m_BuiltinVars.SetAt(_T("IsWin64"), _T("64"));
 		m_BuiltinVars.SetAt(_T("ProgramFiles64"), prog);
 		prog.GetEnvironmentVariable(_T("ProgramFiles(x86)"));
 		m_BuiltinVars.SetAt(_T("ProgramFiles32"), prog);
@@ -560,6 +561,7 @@ void CKuMenuSet::InitBuiltinVars()
 		// Win32
 		m_BuiltinVars.SetAt(_T("Arch"), _T("32"));
 		m_BuiltinVars.SetAt(_T("ArchName"), _T("x86"));
+		m_BuiltinVars.SetAt(_T("IsWin32"), _T("32"));
 		m_BuiltinVars.SetAt(_T("ProgramFiles32"), prog);
 		m_BuiltinVars.SetAt(_T("ProgramFiles64"), prog);
 		m_BuiltinVars.SetAt(_T("SysDir"), sys);
