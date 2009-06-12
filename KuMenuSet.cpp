@@ -917,8 +917,10 @@ bool CKuMenuSet::CMenuItem::InvokeCommand()
 						PathRemoveArgs(str);
 						PathUnquoteSpaces(str);
 						PathRemoveFileSpec(str);
-						m_sWorkingDir.ReleaseBuffer();
+						pShellExecuteThread->m_sWorkingDir.ReleaseBuffer();
 					}
+					else if (!_tcsncmp(m_sWorkingDir, _T(".\\"), 2) && m_pKuMenuSet->m_pData->m_bIsDirectory)
+						pShellExecuteThread->m_sWorkingDir = m_pKuMenuSet->m_pData->m_aFiles[0] + (m_sWorkingDir.GetString() + 1);
 					else
 						pShellExecuteThread->m_sWorkingDir = m_sWorkingDir;
 				}

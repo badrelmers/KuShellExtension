@@ -93,6 +93,7 @@ SYNOPSIS
             action="execute|builtin"
             console="true|false"
             multiple="N"
+            workdir="PATH"
             >
             ACTION
         </menuitem>
@@ -134,6 +135,9 @@ ATTRIBUTES
 
     "multiple="
         Specify the number of arguments the action supports. The menu entry will only be shown when the number of files/folders is selected. Set it to 0 means it is unlimited. If this value is not specified, KuShellExtension tries to detect it by the command line.
+
+    "workdir="
+        The working directory to execute the command. "." (a single dot) causes KuShellExtension to use the directory of the executable file. ".\" causes KuShellExtension always use the selected directory.
 
 ACTIONS
     Normal actions is described as a command line, for the usability, some (dynamic) variables are allowed (see % EXPENSION below). Note you may need to use quotes for the strings that contains spaces, but do not use " directly, because it is not allowed in XML, use &quot; instead.
