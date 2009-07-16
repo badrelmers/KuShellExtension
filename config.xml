@@ -210,14 +210,14 @@ BUILTIN ACTIONS
 	</menu>
 	<menuitem name="----" class="* folder" />
 	<menu name="&amp;7-Zip" icon="${var:7zFM}">
-		<menuitem name="Extract to *\">${var:7zG} x -o&quot;%w\*&quot; -an -ai&quot;@%u&quot;</menuitem>
-		<menuitem name="Extract to here">${var:7zG} x -o&quot;%w&quot; -an -ai&quot;@%u&quot;</menuitem>
-		<menuitem name="Extract to ...">${var:7zG} x -o&quot;%~dpn1&quot; -ad -an -ai&quot;@%u&quot;</menuitem>
-		<menuitem name="Add to archive ..." class="* folder">${var:7zG} a -i&quot;@%u&quot; -ad -- &quot;%z&quot;</menuitem>
-		<menuitem name="Add to .7z archive" class="* folder">${var:7zG} a -i&quot;@%u&quot; -t7z -- &quot;%z.7z&quot;</menuitem>
-		<menuitem name="Add to .zip archive" class="* folder">${var:7zG} a -i&quot;@%u&quot; -tzip -- &quot;%z.zip&quot;</menuitem>
-		<menuitem name="Test the archive">${var:7zG} t -an -ai&quot;@%u&quot;</menuitem>
-		<menuitem name="Open the archive">${var:7zFM} &quot;%1&quot;</menuitem>
+		<menuitem name="Extract to *\">&quot;${var:7zG}&quot; x -o&quot;%w\*&quot; -an -ai&quot;@%u&quot;</menuitem>
+		<menuitem name="Extract to here">&quot;${var:7zG}&quot; x -o&quot;%w&quot; -an -ai&quot;@%u&quot;</menuitem>
+		<menuitem name="Extract to ...">&quot;${var:7zG}&quot; x -o&quot;%~dpn1&quot; -ad -an -ai&quot;@%u&quot;</menuitem>
+		<menuitem name="Add to archive ..." class="* folder">&quot;${var:7zG}&quot; a -i&quot;@%u&quot; -ad -- &quot;%z&quot;</menuitem>
+		<menuitem name="Add to .7z archive" class="* folder">&quot;${var:7zG}&quot; a -i&quot;@%u&quot; -t7z -- &quot;%z.7z&quot;</menuitem>
+		<menuitem name="Add to .zip archive" class="* folder">&quot;${var:7zG}&quot; a -i&quot;@%u&quot; -tzip -- &quot;%z.zip&quot;</menuitem>
+		<menuitem name="Test the archive">&quot;${var:7zG}&quot; t -an -ai&quot;@%u&quot;</menuitem>
+		<menuitem name="Open the archive">&quot;${var:7zFM}&quot; &quot;%1&quot;</menuitem>
 	</menu>
 	<menu name="WinRAR" icon="${var:WinRAR}">
 		<menuitem name="Extract to *\">&quot;${var:WinRAR}&quot; x -iext -ow -ver -anf=&quot;%L1&quot; -scul -ad -- &quot;%1&quot; &quot;%w&quot;</menuitem>
@@ -230,20 +230,20 @@ BUILTIN ACTIONS
 		<menuitem name="Open the archive">&quot;${var:WinRAR}&quot; &quot;%1&quot;</menuitem>
 	</menu>
 	<menu name="UniExtract" icon="${var:UniExtract}">
-		<menuitem name="Extract to *\">${var:UniExtract} %@ /sub</menuitem>
-		<menuitem name="Extract to here">${var:UniExtract} %@ %~dp@</menuitem>
-		<menuitem name="Open the archive">${var:UniExtract} &quot;%1&quot;</menuitem>
+		<menuitem name="Extract to *\">&quot;${var:UniExtract}&quot; %@ /sub</menuitem>
+		<menuitem name="Extract to here">&quot;${var:UniExtract}&quot; %@ %~dp@</menuitem>
+		<menuitem name="Open the archive">&quot;${var:UniExtract}&quot; &quot;%1&quot;</menuitem>
 	</menu>
 	<menu name="UPX">
-		<menuitem name="Compress" class=".exe ${var:dll}">${var:upx}.exe --lzma -9 %*</menuitem>
-		<menuitem name="Decompress" class=".exe ${var:dll}">${var:upx}.exe -d %*</menuitem>
+		<menuitem name="Compress" class=".exe ${var:dll}">&quot;${var:upx}.exe&quot; --lzma -9 %*</menuitem>
+		<menuitem name="Decompress" class=".exe ${var:dll}">&quot;${var:upx}.exe&quot; -d %*</menuitem>
 	</menu>
 	<menuitem name="----" class="* folder" />
 	<menu name="RegSvr32" class="${var:dll}">
 		<menuitem name="Register">regsvr32.exe /s %@</menuitem>
 		<menuitem name="Unregister">regsvr32.exe /s /u %@</menuitem>
 	</menu>
-	<menuitem name="Command Prompt">${env:comspec} /k &quot;cd /d &quot;%1&quot;&quot;</menuitem>
+	<menuitem name="Command Prompt">&quot;${env:comspec}&quot; /k &quot;cd /d &quot;%1&quot;&quot;</menuitem>
 	<menu name="Create links ..." class="folder">
 		<menuitem name="Symbolic links (relative)" action="builtin">DropSymLinks 0</menuitem>
 		<menuitem name="Symbolic links (absolute)" action="builtin">DropSymLinks 1</menuitem>
