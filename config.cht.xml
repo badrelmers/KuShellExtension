@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <config version="1">
 	<!--
+		注意: 中文說明並不完整，請參照英文版本。
+
 		設定變數值:
 			<var name="變數名稱">變數值</var>
 		取得自訂變數值:
