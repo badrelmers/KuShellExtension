@@ -618,7 +618,7 @@ bool CKuMenuSet::CMenuItem::ShouldShown()
 	if (IsSubMenu()) {
 		CMenuItem *pItem;
 		for (pItem = m_pFirstChild;pItem;pItem = pItem->m_pNextSibling)
-			if (pItem->ShouldShown()) {
+			if (!pItem->IsSeparator() && pItem->ShouldShown()) {
 				if (m_sClasses.IsEmpty())
 					return true;
 				return IsOurPath(m_pKuMenuSet->m_pData->m_aFiles[0], m_pKuMenuSet->m_pData->m_bIsDirectory);
