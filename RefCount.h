@@ -32,7 +32,8 @@ public:
 	{ ASSERT(m_uRefCount > 0); return InterlockedDecrement((LONG *) &m_uRefCount); }
 	ULONG GetRefCount() const
 	{ ULONG uRefCount = 0; InterlockedExchange((LONG *) &uRefCount, m_uRefCount); return uRefCount; }
-	static ULONG m_uInstances;private:
+	static ULONG m_uInstances;
+private:
 	ULONG m_uRefCount;
 };
 
