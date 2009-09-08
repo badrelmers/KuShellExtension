@@ -23,7 +23,7 @@ VARIABLES
         KU_SHELL_EXTENSION_DIR: The directory which contains KuShellExtension.
         KU_SHELL_EXTENSION_DRIVE: The drive (e.g. C:) which contains KuShellExtension.
 
-        Arch: Expand to 32 on 32bits Windows, 64 on 64bits Windows (even in WOW64 mode).
+        Arch: Expand to "32" on 32bits Windows, "64" on 64bits Windows (even in WOW64 mode).
         ArchName: "x86" or "x64", depend on OS (not CPU).
         SysDir:
             "C:\Windows\System32" (Windows 32bits, represent as Win32 following)
@@ -51,12 +51,12 @@ VARIABLES
           Desktop, CommonDesktop, Startup, CommonStartup
 
     configure purpose varables:
-    	These varables will affect in some way, you shouldn't use them other than configure KuShellExtension.
+    	These varables will affect KuShellExtension in some way, you shouldn't use them other than configure KuShellExtension.
 
     	LEGACY_STYLE (boolean):
-    	    You should enable this if you are using some third-party theme in Vista and the icons aren't drawn properly.
+    	    Enable this if you are using a third-party theme in Windows Vista and the icons aren't drawn properly.
     	HIDE_MISSING (boolean):
-    	    Enable this to hide the entries that pointer to the programs when aren't existed.
+    	    Enable this to hide the entries which point to some programs aren't existed.
 -->
     <var name="LEGACY_STYLE">false</var>
     <var name="HIDE_MISSING">false</var>
@@ -105,7 +105,7 @@ DESCRIPTION
     <menu>...</menu>
         Define a submenu.
     <menuitem>...</menutiem>
-        Define a leaf entry of menu. To create a separator, use "----" (four hyphens) as the name. (<menuitem name="----" />)
+        Define a leaf entry of menu. To create a separator, use four hyphens ('-') as its name.
     <for V="V1 V2 V3..." U="U1 U2 U3 ..." ...>...</for>
         For ... in loop, ${var:V} and ${var:U} are available in the <for></for> scope.
 
@@ -200,7 +200,7 @@ BUILTIN ACTIONS
 			<menuitem name="${var:lang}" class="${var:exe} ${var:cmd}">&quot;${var:AppLoc}&quot; &quot;%1&quot; /L${var:id}</menuitem>
 			<menuitem name="7-Zip (${var:lang})" class="${var:archive}">&quot;${var:AppLoc}&quot; &quot;${var:7zFM}&quot; &quot;\&quot;%1\&quot;&quot; /L${var:id}</menuitem>
 			<menuitem name="WinRAR (${var:lang})" class="${var:archive}">&quot;${var:AppLoc}&quot; &quot;${var:WinRAR}&quot; &quot;\&quot;%1\&quot;&quot; /L${var:id}</menuitem>
-			<menuitem name="MSI (${var:lang})" class=".msi">&quot;${var:AppLoc}&quot; &quot;${var:SysDir}\msiexec.exe&quot; /i &quot;\&quot;%1\&quot;&quot; /L${var:id}</menuitem>
+			<menuitem name="MSI (${var:lang})" class=".msi">&quot;${var:AppLoc}&quot; &quot;${var:SysDir32}\msiexec.exe&quot; /i &quot;\&quot;%1\&quot;&quot; /L${var:id}</menuitem>
 		</for>
 	</menu>
 	<menu name="Mount CD Image" class="${var:iso}" icon="${var:Alcohol}">
@@ -251,5 +251,6 @@ BUILTIN ACTIONS
 		<menuitem name="Junctions" action="builtin">DropJunctions</menuitem>
 	</menu>
 	<menuitem name="----" class="* folder" />
-	<menuitem name="KuShellExtension Configuration" class="* folder" multiple="true">notepad.exe &quot;${var:CONFIG}&quot;</menuitem>
+	<menuitem name="Reload Configuration" class="* folder" multiple="0" action="builtin">Reload</menuitem>
+	<menuitem name="KuShellExtension Configuration" class="* folder" multiple="0">notepad.exe &quot;${var:CONFIG}&quot;</menuitem>
 </config>
