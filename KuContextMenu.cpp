@@ -25,7 +25,7 @@
 // CKuContextMenu
 //////////////////////////////////////////////////////////////////////////////////////
 
-HRESULT STDMETHODCALLTYPE CKuContextMenu::QueryInterface( 
+STDMETHODIMP CKuContextMenu::QueryInterface( 
 	/* [in] */ REFIID riid,
 	/* [iid_is][out] */ void __RPC_FAR *__RPC_FAR *ppvObject)
 {
@@ -44,7 +44,7 @@ HRESULT STDMETHODCALLTYPE CKuContextMenu::QueryInterface(
 	return S_OK;
 }
 
-HRESULT STDMETHODCALLTYPE CKuContextMenu::QueryContextMenu( 
+STDMETHODIMP CKuContextMenu::QueryContextMenu( 
 	/* [in] */ 
 	HMENU hMenu,
 	/* [in] */ 
@@ -96,7 +96,7 @@ typedef struct _CMINVOKECOMMANDINFOEX
 #define CMIC_MASK_UNICODE       SEE_MASK_UNICODE
 #endif
 
-HRESULT STDMETHODCALLTYPE CKuContextMenu::InvokeCommand( 
+STDMETHODIMP CKuContextMenu::InvokeCommand( 
 	/* [in] */ 
 	CMINVOKECOMMANDINFO *pici)
 {
@@ -118,7 +118,7 @@ HRESULT STDMETHODCALLTYPE CKuContextMenu::InvokeCommand(
 	return S_OK;
 }
 
-HRESULT STDMETHODCALLTYPE CKuContextMenu::GetCommandString( 
+STDMETHODIMP CKuContextMenu::GetCommandString( 
 	/* [in] */ 
 	UINT_PTR idCmd,
 	/* [in] */ 
@@ -146,7 +146,7 @@ HRESULT STDMETHODCALLTYPE CKuContextMenu::GetCommandString(
     return S_OK;
 }
 
-HRESULT STDMETHODCALLTYPE CKuContextMenu::HandleMenuMsg( 
+STDMETHODIMP CKuContextMenu::HandleMenuMsg( 
 	/* [in] */ 
 	UINT uMsg,
 	/* [in] */ 
@@ -160,7 +160,7 @@ HRESULT STDMETHODCALLTYPE CKuContextMenu::HandleMenuMsg(
 /*
 	codes from TortoiseSVN
 */
-HRESULT STDMETHODCALLTYPE CKuContextMenu::HandleMenuMsg2( 
+STDMETHODIMP CKuContextMenu::HandleMenuMsg2( 
 	/* [in] */ 
 	UINT uMsg,
 	/* [in] */ 

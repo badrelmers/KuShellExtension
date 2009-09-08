@@ -24,7 +24,7 @@
 // CKuShellExtInit
 //////////////////////////////////////////////////////////////////////////////////////
 
-HRESULT STDMETHODCALLTYPE CKuShellExtInit::QueryInterface( 
+STDMETHODIMP CKuShellExtInit::QueryInterface( 
 	/* [in] */ REFIID riid,
 	/* [iid_is][out] */ void __RPC_FAR *__RPC_FAR *ppvObject)
 {
@@ -45,7 +45,7 @@ HRESULT STDMETHODCALLTYPE CKuShellExtInit::QueryInterface(
 	return S_OK;
 }
 
-HRESULT STDMETHODCALLTYPE CKuShellExtInit::Initialize( 
+STDMETHODIMP CKuShellExtInit::Initialize( 
     /* [unique][in] */ 
     PCIDLIST_ABSOLUTE pidlFolder,
     /* [unique][in] */ 

@@ -23,7 +23,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 // CKuShellExtensionFactory
 //////////////////////////////////////////////////////////////////////////////////////
-HRESULT STDMETHODCALLTYPE CKuShellExtensionFactory::QueryInterface( 
+STDMETHODIMP CKuShellExtensionFactory::QueryInterface( 
 	/* [in] */ REFIID riid,
 	/* [iid_is][out] */ void __RPC_FAR *__RPC_FAR *ppvObject)
 {
@@ -35,7 +35,7 @@ HRESULT STDMETHODCALLTYPE CKuShellExtensionFactory::QueryInterface(
 	return S_OK;
 }
 
-HRESULT STDMETHODCALLTYPE CKuShellExtensionFactory::CreateInstance( 
+STDMETHODIMP CKuShellExtensionFactory::CreateInstance( 
 	/* [unique][in] */ IUnknown *pUnkOuter,
 	/* [in] */ REFIID riid,
 	/* [iid_is][out] */ void **ppvObject)
@@ -76,7 +76,7 @@ HRESULT STDMETHODCALLTYPE CKuShellExtensionFactory::CreateInstance(
     return S_OK;
 }
 
-HRESULT STDMETHODCALLTYPE CKuShellExtensionFactory::LockServer( 
+STDMETHODIMP CKuShellExtensionFactory::LockServer( 
 	/* [in] */ BOOL fLock)
 {
 	if (fLock)

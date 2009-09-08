@@ -30,7 +30,7 @@ public:
 	virtual ~CKuContextMenu() {}
 
 	// IContextMenu
-	virtual HRESULT STDMETHODCALLTYPE QueryContextMenu( 
+	STDMETHOD(QueryContextMenu)( 
 		/* [in] */ 
 		HMENU hMenu,
 		/* [in] */ 
@@ -42,11 +42,11 @@ public:
 		/* [in] */ 
 		UINT uFlags);
 
-	virtual HRESULT STDMETHODCALLTYPE InvokeCommand( 
+	STDMETHOD(InvokeCommand)( 
 		/* [in] */ 
 		CMINVOKECOMMANDINFO *pici);
 
-	virtual HRESULT STDMETHODCALLTYPE GetCommandString( 
+	STDMETHOD(GetCommandString)( 
 		/* [in] */ 
 		UINT_PTR idCmd,
 		/* [in] */ 
@@ -59,7 +59,7 @@ public:
 		UINT cchMax);
 
 	// IContextMenu2
-	virtual HRESULT STDMETHODCALLTYPE HandleMenuMsg( 
+	STDMETHOD(HandleMenuMsg)( 
 		/* [in] */ 
 		UINT uMsg,
 		/* [in] */ 
@@ -68,7 +68,7 @@ public:
 		LPARAM lParam);
 
 	// IContextMenu3
-	virtual HRESULT STDMETHODCALLTYPE HandleMenuMsg2( 
+	STDMETHOD(HandleMenuMsg2)( 
 		/* [in] */ 
 		UINT uMsg,
 		/* [in] */ 

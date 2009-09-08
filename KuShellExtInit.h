@@ -55,7 +55,7 @@ public:
 	virtual ~CKuShellExtInit() {}
 
 	// IShellExtInit
-	virtual HRESULT STDMETHODCALLTYPE Initialize( 
+	STDMETHOD(Initialize)( 
 		/* [unique][in] */ 
 		PCIDLIST_ABSOLUTE pidlFolder,
 		/* [unique][in] */ 

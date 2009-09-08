@@ -28,12 +28,12 @@ public:
 	virtual ~CKuShellExtensionFactory() {}
 
 	// IClassFactory
-	virtual /* [local] */ HRESULT STDMETHODCALLTYPE CreateInstance( 
+	STDMETHOD(CreateInstance)( 
 		/* [unique][in] */ IUnknown *pUnkOuter,
 		/* [in] */ REFIID riid,
 		/* [iid_is][out] */ void **ppvObject);
 
-	virtual /* [local] */ HRESULT STDMETHODCALLTYPE LockServer( 
+	STDMETHOD(LockServer)( 
 		/* [in] */ BOOL fLock);
 };
 
