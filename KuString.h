@@ -24,10 +24,10 @@
 	The "copy on write" means,
 		CKuString s1, s2, s3, s4;
 		s1 = s2 = s3 = s4 = "this is a string";
-	will share the same buffer, which saves spaces and should be faster when copying strings.
+	will share the same buffer, which saves spaces and does faster when copying strings.
 
 	WARNING: It is not thread safe, to copy a string from a thread to another thread, use following syntax
-	s2 = s1.GetString(); // s2 will have it own buffer, which is not shared by other instances.
+	s2 = s1.GetString(); // s2 will have its own buffer, which is not shared by other instances.
 */
 
 #ifdef _WIN32
