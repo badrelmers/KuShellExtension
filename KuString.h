@@ -68,6 +68,12 @@
 #endif
 #endif
 
+#ifndef va_copy
+	#ifdef _WIN32
+		#define va_copy(dst, src) { (dst) = (src); }
+	#endif
+#endif
+
 template<typename T, typename U> class CKuStringT;
 class CKuStringUtilA;
 class CKuStringUtilW;
@@ -700,13 +706,15 @@ public:
 	{
 		ASSERT(fmt);
 		New(false);
+		va_list ap2;
+		va_copy(ap2, ap);
 		int len = U::FormatV(NULL, 0, fmt, ap);
 		ASSERT(len >= 0);
 		// NOTE: The length argument of format function has deferent implementions.
 		// Use safe one, though it may waste 1 character space.
 		len++;
 		m_pData->Alloc(len);
-		m_pData->m_iLength = U::FormatV(m_pData->m_sString, len, fmt, ap);
+		m_pData->m_iLength = U::FormatV(m_pData->m_sString, len, fmt, ap2);
 		return *this;
 	}
 	CKuStringT& Format(CSTRT fmt, ...)
@@ -720,13 +728,15 @@ public:
 	{
 		ASSERT(fmt);
 		New();
+		va_list ap2;
+		va_copy(ap2, ap);
 		int len = U::FormatV(NULL, 0, fmt, ap);
 		ASSERT(len >= 0);
 		// NOTE: The length argument of format function has deferent implementions.
 		// Use safe one, though it may waste 1 character space.
 		len++;
 		m_pData->Alloc(m_pData->m_iLength + len);
-		m_pData->m_iLength += U::FormatV(m_pData->m_sString + m_pData->m_iLength, len, fmt, ap);
+		m_pData->m_iLength += U::FormatV(m_pData->m_sString + m_pData->m_iLength, len, fmt, ap2);
 		return *this;
 	}
 	CKuStringT& AppendFormat(CSTRT fmt, ...)
