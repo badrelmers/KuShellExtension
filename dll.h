@@ -62,6 +62,8 @@ DECLARE_DLL_PROC(GdipDisposeImage, "gdiplus", Gdiplus::GpStatus, WINGDIPAPI, (Gd
 DECLARE_DLL_PROC(IsAppThemed, "uxtheme", BOOL, WINAPI, ())
 DECLARE_DLL_PROC(IsThemeActive, "uxtheme", BOOL, WINAPI, ())
 
+DECLARE_DLL_PROC(SHGetKnownFolderPath, "shell32", HRESULT, WINAPI, (GUID rfid, DWORD dwFlags, HANDLE hToken, PWSTR *ppszPath))
+
 #undef DECLARE_DLL_PROC
 #if defined(DLL_DEFINE)
 	#define DLL_GETPROCADDR

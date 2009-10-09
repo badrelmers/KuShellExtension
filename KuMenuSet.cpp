@@ -408,8 +408,12 @@ LPCTSTR CKuMenuSet::Substitute(LPCTSTR src, CString &dest, CMenuItem *pItem)
 								dest += _T('&');
 							else if (!var.CompareNoCase(_T("quot")))
 								dest += _T('"');
-							else if (IsNumber(var))
-								dest += (wchar_t) _wtoi(var);
+							else if (var[0] == _T('#')) { 
+								if (var[1] == _T('x'))
+									dest += (wchar_t)  _tcstoul(var.GetString() + 2, NULL, 16);
+								else
+									dest += (wchar_t) _tcstoul(var.GetString() + 1, NULL, 10);
+							}
 							state = SUBST_INIT;
 							break;
 						default:
@@ -500,75 +504,142 @@ HRESULT CKuMenuSet::QueryContextMenu(HMENU hMenu, UINT indexMenu, UINT idCmdFirs
 
 void CKuMenuSet::InitBuiltinVars()
 {
-	CString prog, sys, syswow;
-
 	m_BuiltinVars.RemoveAll();
 
 	m_BuiltinVars.SetAt(_T("CONFIG"), ku::sConfigFile);
 	m_BuiltinVars.SetAt(_T("KU_SHELL_EXTENSION_DIR"), ku::sModuleDir);
 	m_BuiltinVars.SetAt(_T("KU_SHELL_EXTENSION_DRIVE"), ku::sModulePath.Left(2));
 
-	prog.GetEnvironmentVariable(_T("ProgramFiles"));
-	m_BuiltinVars.SetAt(_T("ProgramFiles"), prog);
+	if (dll::SHGetKnownFolderPath) {
+		PWSTR sOut = NULL;
 
-#define CSIDL_SETVAR(id, name) \
-	if (SHGetSpecialFolderPath(NULL, sys.GetBufferSetLength(KU_MAX_PATH), (id), FALSE)) \
-	{ sys.ReleaseBuffer(); m_BuiltinVars.SetAt((name), sys); } else sys.ReleaseBuffer();
+		#ifndef KF_FLAG_DONT_VERIFY
+		#define KF_FLAG_DONT_VERIFY 0x00004000
+		#endif
+		#define FOLDERID_SETVAR(id, name) \
+			if (sOut) { CoTaskMemFree(sOut); sOut = NULL; } \
+			if (dll::SHGetKnownFolderPath((id), KF_FLAG_DONT_VERIFY, NULL, &sOut) == S_OK) \
+				m_BuiltinVars.SetAt((name), sOut);
 
-	CSIDL_SETVAR(CSIDL_PERSONAL, _T("Documents"));
-	CSIDL_SETVAR(CSIDL_COMMON_DOCUMENTS, _T("CommonDocuments"));
-	CSIDL_SETVAR(CSIDL_MYPICTURES, _T("Pictures"));
-	CSIDL_SETVAR(CSIDL_COMMON_PICTURES, _T("CommonPictures"));
-	CSIDL_SETVAR(CSIDL_MYMUSIC, _T("Music"));
-	CSIDL_SETVAR(CSIDL_COMMON_MUSIC, _T("CommonMusic"));
-	CSIDL_SETVAR(CSIDL_MYVIDEO, _T("Video"));
-	CSIDL_SETVAR(CSIDL_COMMON_VIDEO, _T("CommonVideo"));
-	CSIDL_SETVAR(CSIDL_DESKTOPDIRECTORY, _T("Desktop"));
-	CSIDL_SETVAR(CSIDL_COMMON_DESKTOPDIRECTORY, _T("CommonDesktop"));
-	CSIDL_SETVAR(CSIDL_STARTUP, _T("Startup"));
-	CSIDL_SETVAR(CSIDL_COMMON_STARTUP, _T("CommonStartup"));
-
-#undef CSIDL_SETVAR
-
-	SHGetSpecialFolderPath(NULL, sys.GetBufferSetLength(KU_MAX_PATH), CSIDL_SYSTEM, FALSE);
-	sys.ReleaseBuffer();
+		FOLDERID_SETVAR(FOLDERID_Documents, _T("Documents"));
+		FOLDERID_SETVAR(FOLDERID_PublicDocuments, _T("CommonDocuments"));
+		FOLDERID_SETVAR(FOLDERID_Pictures, _T("Pictures"));
+		FOLDERID_SETVAR(FOLDERID_PublicPictures, _T("CommonPictures"));
+		FOLDERID_SETVAR(FOLDERID_Music, _T("Music"));
+		FOLDERID_SETVAR(FOLDERID_PublicMusic, _T("CommonMusic"));
+		FOLDERID_SETVAR(FOLDERID_Videos, _T("Video"));
+		FOLDERID_SETVAR(FOLDERID_PublicVideos, _T("CommonVideo"));
+		FOLDERID_SETVAR(FOLDERID_Desktop, _T("Desktop"));
+		FOLDERID_SETVAR(FOLDERID_PublicDesktop, _T("CommonDesktop"));
+		FOLDERID_SETVAR(FOLDERID_Startup, _T("Startup"));
+		FOLDERID_SETVAR(FOLDERID_CommonStartup, _T("CommonStartup"));
+		FOLDERID_SETVAR(FOLDERID_Downloads, _T("Downloads"));
+		FOLDERID_SETVAR(FOLDERID_PublicDownloads, _T("CommonDownloads"));
 
 #ifndef _WIN64
-	if (ku::bIsWow64) {
+		if (ku::bIsWow64) {
 #endif
-		// Win64
-		SHGetSpecialFolderPath(NULL, syswow.GetBufferSetLength(KU_MAX_PATH), CSIDL_SYSTEMX86, FALSE);
-		syswow.ReleaseBuffer();
-#ifndef _WIN64
-		// Wow64
-		m_BuiltinVars.SetAt(_T("SysDir"), syswow);
-		prog.GetEnvironmentVariable(_T("ProgramW6432"));
+			// Win64
+			m_BuiltinVars.SetAt(_T("Arch"), _T("64"));
+			m_BuiltinVars.SetAt(_T("ArchName"), _T("x64"));
+			m_BuiltinVars.SetAt(_T("IsWin64"), _T("64"));
+
+			FOLDERID_SETVAR(FOLDERID_ProgramFiles, _T("ProgramFiles"));
+			FOLDERID_SETVAR(FOLDERID_ProgramFilesX64, _T("ProgramFiles32"));
+			FOLDERID_SETVAR(FOLDERID_ProgramFilesX86, _T("ProgramFiles64"));
+#ifdef _WIN64
+			// 64 on Win64
+			FOLDERID_SETVAR(FOLDERID_System, _T("SysDir"));
 #else
-		m_BuiltinVars.SetAt(_T("SysDir"), sys); // 64 on Win64
+			// WOW64
+			FOLDERID_SETVAR(FOLDERID_SystemX86, _T("SysDir"));
 #endif
-		// Win64
-		m_BuiltinVars.SetAt(_T("Arch"), _T("64"));
-		m_BuiltinVars.SetAt(_T("ArchName"), _T("x64"));
-		m_BuiltinVars.SetAt(_T("IsWin64"), _T("64"));
-		m_BuiltinVars.SetAt(_T("ProgramFiles64"), prog);
-		prog.GetEnvironmentVariable(_T("ProgramFiles(x86)"));
-		m_BuiltinVars.SetAt(_T("ProgramFiles32"), prog);
-		m_BuiltinVars.SetAt(_T("SysDir64"), sys);
-		m_BuiltinVars.SetAt(_T("SysDir32"), syswow);
+			FOLDERID_SETVAR(FOLDERID_SystemX86, _T("SysDir32"));
+			FOLDERID_SETVAR(FOLDERID_System, _T("SysDir64"));
 #ifndef _WIN64
+		}
+		else {
+			// Win32
+			m_BuiltinVars.SetAt(_T("Arch"), _T("32"));
+			m_BuiltinVars.SetAt(_T("ArchName"), _T("x86"));
+			m_BuiltinVars.SetAt(_T("IsWin32"), _T("32"));
+			FOLDERID_SETVAR(FOLDERID_ProgramFiles, _T("ProgramFiles"));
+			m_BuiltinVars.SetAt(sOut, _T("ProgramFiles32"));
+			m_BuiltinVars.SetAt(sOut, _T("ProgramFiles64"));
+			FOLDERID_SETVAR(FOLDERID_System, _T("SysDir"));
+			m_BuiltinVars.SetAt(sOut, _T("SysDir32"));
+			m_BuiltinVars.SetAt(sOut, _T("SysDir64"));
+		}
+#endif // _WIN64
+
+		if (sOut)
+			CoTaskMemFree(sOut);
 	}
 	else {
-		// Win32
-		m_BuiltinVars.SetAt(_T("Arch"), _T("32"));
-		m_BuiltinVars.SetAt(_T("ArchName"), _T("x86"));
-		m_BuiltinVars.SetAt(_T("IsWin32"), _T("32"));
-		m_BuiltinVars.SetAt(_T("ProgramFiles32"), prog);
-		m_BuiltinVars.SetAt(_T("ProgramFiles64"), prog);
-		m_BuiltinVars.SetAt(_T("SysDir"), sys);
-		m_BuiltinVars.SetAt(_T("SysDir32"), sys);
-		m_BuiltinVars.SetAt(_T("SysDir64"), sys);
-	}
+		CString prog, sys, syswow;
+
+		prog.GetEnvironmentVariable(_T("ProgramFiles"));
+		m_BuiltinVars.SetAt(_T("ProgramFiles"), prog);
+
+		#define CSIDL_SETVAR(id, name) \
+			if (SHGetSpecialFolderPath(NULL, sys.GetBufferSetLength(KU_MAX_PATH), (id), FALSE)) \
+			{ sys.ReleaseBuffer(); m_BuiltinVars.SetAt((name), sys); } else sys.ReleaseBuffer();
+
+		CSIDL_SETVAR(CSIDL_MYDOCUMENTS, _T("Documents"));
+		CSIDL_SETVAR(CSIDL_COMMON_DOCUMENTS, _T("CommonDocuments"));
+		CSIDL_SETVAR(CSIDL_MYPICTURES, _T("Pictures"));
+		CSIDL_SETVAR(CSIDL_COMMON_PICTURES, _T("CommonPictures"));
+		CSIDL_SETVAR(CSIDL_MYMUSIC, _T("Music"));
+		CSIDL_SETVAR(CSIDL_COMMON_MUSIC, _T("CommonMusic"));
+		CSIDL_SETVAR(CSIDL_MYVIDEO, _T("Video"));
+		CSIDL_SETVAR(CSIDL_COMMON_VIDEO, _T("CommonVideo"));
+		CSIDL_SETVAR(CSIDL_DESKTOPDIRECTORY, _T("Desktop"));
+		CSIDL_SETVAR(CSIDL_COMMON_DESKTOPDIRECTORY, _T("CommonDesktop"));
+		CSIDL_SETVAR(CSIDL_STARTUP, _T("Startup"));
+		CSIDL_SETVAR(CSIDL_COMMON_STARTUP, _T("CommonStartup"));
+
+		#undef CSIDL_SETVAR
+
+		SHGetSpecialFolderPath(NULL, sys.GetBufferSetLength(KU_MAX_PATH), CSIDL_SYSTEM, FALSE);
+		sys.ReleaseBuffer();
+
+#ifndef _WIN64
+		if (ku::bIsWow64) {
 #endif
+			// Win64
+			SHGetSpecialFolderPath(NULL, syswow.GetBufferSetLength(KU_MAX_PATH), CSIDL_SYSTEMX86, FALSE);
+			syswow.ReleaseBuffer();
+#ifndef _WIN64
+			// Wow64
+			m_BuiltinVars.SetAt(_T("SysDir"), syswow);
+			prog.GetEnvironmentVariable(_T("ProgramW6432"));
+#else
+			m_BuiltinVars.SetAt(_T("SysDir"), sys); // 64 on Win64
+#endif
+			// Win64
+			m_BuiltinVars.SetAt(_T("Arch"), _T("64"));
+			m_BuiltinVars.SetAt(_T("ArchName"), _T("x64"));
+			m_BuiltinVars.SetAt(_T("IsWin64"), _T("64"));
+			m_BuiltinVars.SetAt(_T("ProgramFiles64"), prog);
+			prog.GetEnvironmentVariable(_T("ProgramFiles(x86)"));
+			m_BuiltinVars.SetAt(_T("ProgramFiles32"), prog);
+			m_BuiltinVars.SetAt(_T("SysDir64"), sys);
+			m_BuiltinVars.SetAt(_T("SysDir32"), syswow);
+#ifndef _WIN64
+		}
+		else {
+			// Win32
+			m_BuiltinVars.SetAt(_T("Arch"), _T("32"));
+			m_BuiltinVars.SetAt(_T("ArchName"), _T("x86"));
+			m_BuiltinVars.SetAt(_T("IsWin32"), _T("32"));
+			m_BuiltinVars.SetAt(_T("ProgramFiles32"), prog);
+			m_BuiltinVars.SetAt(_T("ProgramFiles64"), prog);
+			m_BuiltinVars.SetAt(_T("SysDir"), sys);
+			m_BuiltinVars.SetAt(_T("SysDir32"), sys);
+			m_BuiltinVars.SetAt(_T("SysDir64"), sys);
+		}
+#endif // _WIN64
+	}
 }
 
 bool CKuMenuSet::CMenuItem::IsOurPath(LPCTSTR sPath, bool bDir)
