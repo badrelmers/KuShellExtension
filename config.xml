@@ -33,7 +33,7 @@ VARIABLES
             "C:\Windows\System32" (Win32)
             "C:\Windows\SysWOW64" (WOW64 and Win64)
         SysDir64:
-            "C:\Windows\System32" (Win32, WOW64, Win64)
+            "C:\Windows\System32" (all platforms)
         ProgramFiles:
             "C:\Program Files" (Win32)
             "C:\Program Files (x86)" (WOW64)
@@ -42,13 +42,13 @@ VARIABLES
             "C:\Program Files" (Win32)
             "C:\Program Files (x86)" (WOW64 and Win64)
         ProgramFiles64:
-            "C:\Program Files" (Win32, WOW64, Win64)
+            "C:\Program Files" (all platforms)
         Documents: "My Documents" folder
         CommonDocuments: "Common Documents" folder
 
         Other available varables:
           Pictures, CommonPictures, Music, CommonMusic, Video, CommonVideo,
-          Desktop, CommonDesktop, Startup, CommonStartup
+          Desktop, CommonDesktop, Startup, CommonStartup, Downloads, CommonDownloads
 
     configure purpose varables:
     	These varables will affect KuShellExtension in some way, you shouldn't use them other than configure KuShellExtension.

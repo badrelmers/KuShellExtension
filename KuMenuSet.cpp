@@ -513,12 +513,9 @@ void CKuMenuSet::InitBuiltinVars()
 	if (dll::SHGetKnownFolderPath) {
 		PWSTR sOut = NULL;
 
-		#ifndef KF_FLAG_DONT_VERIFY
-		#define KF_FLAG_DONT_VERIFY 0x00004000
-		#endif
 		#define FOLDERID_SETVAR(id, name) \
 			if (sOut) { CoTaskMemFree(sOut); sOut = NULL; } \
-			if (dll::SHGetKnownFolderPath((id), KF_FLAG_DONT_VERIFY, NULL, &sOut) == S_OK) \
+			if (dll::SHGetKnownFolderPath(&(id), KF_FLAG_DONT_VERIFY, NULL, &sOut) == S_OK) \
 				m_BuiltinVars.SetAt((name), sOut);
 
 		FOLDERID_SETVAR(FOLDERID_Documents, _T("Documents"));
@@ -545,13 +542,15 @@ void CKuMenuSet::InitBuiltinVars()
 			m_BuiltinVars.SetAt(_T("IsWin64"), _T("64"));
 
 			FOLDERID_SETVAR(FOLDERID_ProgramFiles, _T("ProgramFiles"));
-			FOLDERID_SETVAR(FOLDERID_ProgramFilesX64, _T("ProgramFiles32"));
-			FOLDERID_SETVAR(FOLDERID_ProgramFilesX86, _T("ProgramFiles64"));
+			FOLDERID_SETVAR(FOLDERID_ProgramFilesX86, _T("ProgramFiles32"));
 #ifdef _WIN64
 			// 64 on Win64
+			FOLDERID_SETVAR(FOLDERID_ProgramFilesX64, _T("ProgramFiles64"));
 			FOLDERID_SETVAR(FOLDERID_System, _T("SysDir"));
 #else
 			// WOW64
+			// Oops, FOLDERID_ProgramFilesX64 isn't applicable in WOW64. MSDN cheat us. :(
+			m_BuiltinVars.SetAt(_T("ProgramFiles64"), CString(_tgetenv(_T("ProgramW6432"))));
 			FOLDERID_SETVAR(FOLDERID_SystemX86, _T("SysDir"));
 #endif
 			FOLDERID_SETVAR(FOLDERID_SystemX86, _T("SysDir32"));

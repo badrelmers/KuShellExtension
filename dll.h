@@ -62,7 +62,10 @@ DECLARE_DLL_PROC(GdipDisposeImage, "gdiplus", Gdiplus::GpStatus, WINGDIPAPI, (Gd
 DECLARE_DLL_PROC(IsAppThemed, "uxtheme", BOOL, WINAPI, ())
 DECLARE_DLL_PROC(IsThemeActive, "uxtheme", BOOL, WINAPI, ())
 
-DECLARE_DLL_PROC(SHGetKnownFolderPath, "shell32", HRESULT, WINAPI, (GUID rfid, DWORD dwFlags, HANDLE hToken, PWSTR *ppszPath))
+#ifndef KF_FLAG_DONT_VERIFY
+#define KF_FLAG_DONT_VERIFY 0x00004000
+#endif
+DECLARE_DLL_PROC(SHGetKnownFolderPath, "shell32", HRESULT, WINAPI, (const GUID *rfid, DWORD dwFlags, HANDLE hToken, PWSTR *ppszPath))
 
 #undef DECLARE_DLL_PROC
 #if defined(DLL_DEFINE)
