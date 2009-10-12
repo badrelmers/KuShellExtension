@@ -185,6 +185,8 @@ STDAPI DllRegisterServer()
 	if (SHSetValue(HKEY_CURRENT_USER, _T("Software\\Classes\\*\\shellex\\ContextMenuHandlers\\") + g_sName, NULL, REG_SZ, (LPCVOID) g_sCLSID.GetString(), dwClsidCcb) != ERROR_SUCCESS ||
 		SHSetValue(HKEY_CURRENT_USER, _T("Software\\Classes\\Directory\\shellex\\ContextMenuHandlers\\") + g_sName, NULL, REG_SZ, (LPCVOID) g_sCLSID.GetString(), dwClsidCcb) != ERROR_SUCCESS ||
 		SHSetValue(HKEY_CURRENT_USER, _T("Software\\Classes\\Directory\\Background\\shellex\\ContextMenuHandlers\\") + g_sName, NULL, REG_SZ, (LPCVOID) g_sCLSID.GetString(), dwClsidCcb) != ERROR_SUCCESS ||
+		SHSetValue(HKEY_CURRENT_USER, _T("Software\\Classes\\LibraryFolder\\shellex\\ContextMenuHandlers\\") + g_sName, NULL, REG_SZ, (LPCVOID) g_sCLSID.GetString(), dwClsidCcb) != ERROR_SUCCESS ||
+		SHSetValue(HKEY_CURRENT_USER, _T("Software\\Classes\\LibraryFolder\\Background\\shellex\\ContextMenuHandlers\\") + g_sName, NULL, REG_SZ, (LPCVOID) g_sCLSID.GetString(), dwClsidCcb) != ERROR_SUCCESS ||
 		SHSetValue(HKEY_CURRENT_USER, _T("Software\\Classes\\Drive\\shellex\\ContextMenuHandlers\\") + g_sName, NULL, REG_SZ, (LPCVOID) g_sCLSID.GetString(), dwClsidCcb) != ERROR_SUCCESS ||
 		SHSetValue(HKEY_CURRENT_USER, _T("Software\\Classes\\CLSID\\") + g_sCLSID, NULL, REG_SZ, (LPCVOID) g_sName.GetString(), dwNameCcb) != ERROR_SUCCESS ||
 		SHSetValue(HKEY_CURRENT_USER, _T("Software\\Classes\\CLSID\\") + g_sCLSID + _T("\\InProcServer32"), NULL, REG_SZ, (LPCVOID) ku::sModulePath.GetString(), (DWORD) (ku::sModulePath.GetLength() + 1) * sizeof(TCHAR)) != ERROR_SUCCESS ||
@@ -206,6 +208,8 @@ STDAPI DllUnregisterServer()
 	if (SHDeleteKey(HKEY_CURRENT_USER, _T("Software\\Classes\\*\\shellex\\ContextMenuHandlers\\") + g_sName) != ERROR_SUCCESS ||
 		SHDeleteKey(HKEY_CURRENT_USER, _T("Software\\Classes\\Directory\\shellex\\ContextMenuHandlers\\") + g_sName) != ERROR_SUCCESS ||
 		SHDeleteKey(HKEY_CURRENT_USER, _T("Software\\Classes\\Directory\\Background\\shellex\\ContextMenuHandlers\\") + g_sName) != ERROR_SUCCESS ||
+		SHDeleteKey(HKEY_CURRENT_USER, _T("Software\\Classes\\LibraryFolder\\shellex\\ContextMenuHandlers\\") + g_sName) != ERROR_SUCCESS ||
+		SHDeleteKey(HKEY_CURRENT_USER, _T("Software\\Classes\\LibraryFolder\\Background\\shellex\\ContextMenuHandlers\\") + g_sName) != ERROR_SUCCESS ||
 		SHDeleteKey(HKEY_CURRENT_USER, _T("Software\\Classes\\Drive\\shellex\\ContextMenuHandlers\\") + g_sName) != ERROR_SUCCESS ||
 		SHDeleteKey(HKEY_CURRENT_USER, _T("Software\\Classes\\CLSID\\") + g_sCLSID) != ERROR_SUCCESS)
 		return SELFREG_E_CLASS;
