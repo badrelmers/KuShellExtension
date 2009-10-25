@@ -21,17 +21,17 @@
 
 #if defined(DLL_GETPROCADDR)
 	#define DLL_H_GETPROCADDR
-	#define DECLARE_DLL_PROC(name, dll, ret, call, args) { \
+	#define DECLARE_DLL_PROC(dll, ret, call, name, args) { \
 		HMODULE hModule = GetModuleHandle(_T(dll)); \
 		if (!hModule) hModule = LoadLibrary(_T(dll) _T(".dll")); \
 		if (hModule) name = (name##Proc) GetProcAddress(hModule , #name); }
 #elif defined(DLL_DEFINE)
 	#define DLL_H_DEFINE
-	#define DECLARE_DLL_PROC(name, dll, ret, call, args) \
+	#define DECLARE_DLL_PROC(dll, ret, call, name, args) \
 		name##Proc name = NULL;
 #else
 	#define DLL_H_DECLARE
-	#define DECLARE_DLL_PROC(name, dll, ret, call, args) \
+	#define DECLARE_DLL_PROC(dll, ret, call, name, args) \
 		typedef ret (call *name##Proc) args; \
 		extern name##Proc name;
 #endif
@@ -45,27 +45,29 @@ namespace dll {
 #ifndef SYMBOLIC_LINK_FLAG_DIRECTORY
 #define SYMBOLIC_LINK_FLAG_DIRECTORY (0x1)
 #endif
-DECLARE_DLL_PROC(CreateSymbolicLinkW, "kernel32", BOOL, APIENTRY, (LPCWSTR lpSymlinkFileName, LPCWSTR lpTargetFileName, DWORD dwFlags))
+DECLARE_DLL_PROC("kernel32", BOOL, APIENTRY, CreateSymbolicLinkW, (LPCWSTR lpSymlinkFileName, LPCWSTR lpTargetFileName, DWORD dwFlags))
 
 #ifndef _WIN64
-DECLARE_DLL_PROC(IsWow64Process, "kernel32", BOOL, WINAPI, (HANDLE hProcess, PBOOL Wow64Process))
-DECLARE_DLL_PROC(Wow64DisableWow64FsRedirection, "kernel32", BOOL, WINAPI, (PVOID* OldValue))
-DECLARE_DLL_PROC(Wow64RevertWow64FsRedirection, "kernel32", BOOL, WINAPI, (PVOID OldValue))
+DECLARE_DLL_PROC("kernel32", BOOL, WINAPI, IsWow64Process, (HANDLE hProcess, PBOOL Wow64Process))
+DECLARE_DLL_PROC("kernel32", BOOL, WINAPI, Wow64DisableWow64FsRedirection, (PVOID* OldValue))
+DECLARE_DLL_PROC("kernel32", BOOL, WINAPI, Wow64RevertWow64FsRedirection, (PVOID OldValue))
 #endif
 
-DECLARE_DLL_PROC(GdiplusStartup, "gdiplus", BOOL, WINAPI, (ULONG_PTR *token, const Gdiplus::GdiplusStartupInput *input, Gdiplus::GdiplusStartupOutput *output))
-DECLARE_DLL_PROC(GdiplusShutdown, "gdiplus", VOID, WINAPI, (ULONG_PTR token))
-DECLARE_DLL_PROC(GdipCreateBitmapFromHICON, "gdiplus", Gdiplus::GpStatus, WINGDIPAPI, (HICON hicon, Gdiplus::GpBitmap** bitmap))
-DECLARE_DLL_PROC(GdipCreateHBITMAPFromBitmap, "gdiplus", Gdiplus::GpStatus, WINGDIPAPI, (Gdiplus::GpBitmap* bitmap, HBITMAP* hbmReturn, Gdiplus::ARGB background))
-DECLARE_DLL_PROC(GdipDisposeImage, "gdiplus", Gdiplus::GpStatus, WINGDIPAPI, (Gdiplus::GpImage *image))
+DECLARE_DLL_PROC("gdiplus", BOOL, WINAPI, GdiplusStartup, (ULONG_PTR *token, const Gdiplus::GdiplusStartupInput *input, Gdiplus::GdiplusStartupOutput *output))
+DECLARE_DLL_PROC("gdiplus", VOID, WINAPI, GdiplusShutdown, (ULONG_PTR token))
+DECLARE_DLL_PROC("gdiplus", Gdiplus::GpStatus, WINGDIPAPI, GdipCreateBitmapFromFile, (GDIPCONST WCHAR* filename, Gdiplus::GpBitmap **bitmap))
+DECLARE_DLL_PROC("gdiplus", Gdiplus::GpStatus, WINGDIPAPI, GdipCreateBitmapFromHICON, (HICON hicon, Gdiplus::GpBitmap **bitmap))
+DECLARE_DLL_PROC("gdiplus", Gdiplus::GpStatus, WINGDIPAPI, GdipCreateHBITMAPFromBitmap, (Gdiplus::GpBitmap* bitmap, HBITMAP* hbmReturn, Gdiplus::ARGB background))
+DECLARE_DLL_PROC("gdiplus", Gdiplus::GpStatus, WINGDIPAPI, GdipCreateHICONFromBitmap, (Gdiplus::GpBitmap* bitmap, HICON* hbmReturn))
+DECLARE_DLL_PROC("gdiplus", Gdiplus::GpStatus, WINGDIPAPI, GdipDisposeImage, (Gdiplus::GpImage *image))
 
-DECLARE_DLL_PROC(IsAppThemed, "uxtheme", BOOL, WINAPI, ())
-DECLARE_DLL_PROC(IsThemeActive, "uxtheme", BOOL, WINAPI, ())
+DECLARE_DLL_PROC("uxtheme", BOOL, WINAPI, IsAppThemed, ())
+DECLARE_DLL_PROC("uxtheme", BOOL, WINAPI, IsThemeActive, ())
 
 #ifndef KF_FLAG_DONT_VERIFY
 #define KF_FLAG_DONT_VERIFY 0x00004000
 #endif
-DECLARE_DLL_PROC(SHGetKnownFolderPath, "shell32", HRESULT, WINAPI, (const GUID *rfid, DWORD dwFlags, HANDLE hToken, PWSTR *ppszPath))
+DECLARE_DLL_PROC("shell32", HRESULT, WINAPI, SHGetKnownFolderPath, (const GUID *rfid, DWORD dwFlags, HANDLE hToken, PWSTR *ppszPath))
 
 #undef DECLARE_DLL_PROC
 #if defined(DLL_DEFINE)

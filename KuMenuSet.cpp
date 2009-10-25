@@ -120,6 +120,9 @@ bool CKuMenuSet::FromString(LPCTSTR sXML)
 
 	pug::xml_node node = doc;
 	node.moveto_child((unsigned int) 0);
+
+	if (dll::GdiplusStartup && !ku::gdiplusToken)
+		dll::GdiplusStartup(&ku::gdiplusToken, &ku::gdiplusStartupInput, NULL);
 	PraseMenuItems(node, m_pFirstItem);
 
 	return true;
@@ -236,9 +239,25 @@ void CKuMenuSet::PraseMenuItems(pug::xml_node &node, CMenuItem *pItem)
 					dll::Wow64DisableWow64FsRedirection(&oldWow64);
 #endif
 				if (PathFileExists(pIcon)) {
-					ExtractIconEx(pIcon, i, NULL, &pItem->m_hIcon, 1);
-					if (pItem->m_hIcon && ku::SysVer.m_vMajor >= 6)
-						pItem->m_hBitmap = CKuContextMenu::IconToBitmap(pItem->m_hIcon);
+					LPCTSTR sExt = _tcsrchr(pIcon, _T('.'));
+					if (!sExt)
+						sExt = _T("");
+					else
+						sExt++;
+					if (!_tcsicmp(sExt, _T("png")) || !_tcsicmp(sExt, _T("gif")) || !_tcsicmp(sExt, _T("bmp")) ||
+						!_tcsicmp(sExt, _T("jpg")) || !_tcsicmp(sExt, _T("tif")))
+					{
+						Gdiplus::GpBitmap *pBitmap = NULL;
+						if (dll::GdipCreateBitmapFromFile(pIcon, &pBitmap) == Gdiplus::Ok) {
+							dll::GdipCreateHICONFromBitmap(pBitmap, &pItem->m_hIcon);
+							dll::GdipCreateHBITMAPFromBitmap(pBitmap, &pItem->m_hBitmap, Gdiplus::Color::Transparent);
+						}
+					}
+					else {
+						ExtractIconEx(pIcon, i, NULL, &pItem->m_hIcon, 1);
+						if (pItem->m_hIcon && ku::SysVer.m_vMajor >= 6)
+							pItem->m_hBitmap = CKuContextMenu::IconToBitmap(pItem->m_hIcon);
+					}
 				}
 #ifndef _WIN64
 				if (dll::Wow64RevertWow64FsRedirection)

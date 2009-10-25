@@ -62,10 +62,10 @@ public:
 	CRefCountPtr(const T &Object) : m_pObject(&Object) { m_pObject->AddRef(); }
 	~CRefCountPtr() { if (m_pObject) m_pObject->Release(); }
 
-	void Attach(T *pObject) { if (m_pObject) m_pObject->Release(); m_pObject = pObject; }
+	void Attach(T *pObject) { if (pObject != m_pObject) { if (m_pObject) m_pObject->Release(); m_pObject = pObject; } }
 	T *Detach() { T *pObject = m_pObject; m_pObject = NULL; return pObject; }
 
-	CRefCountPtr& operator = (T *pObject) { if (m_pObject) m_pObject->Release(); if (m_pObject = pObject) m_pObject->AddRef(); return *this; }
+	CRefCountPtr& operator = (T *pObject) { if (pObject != m_pObject) { if (m_pObject) m_pObject->Release(); if (m_pObject = pObject) m_pObject->AddRef(); } return *this; }
 	CRefCountPtr& operator = (const T &Object) { return *this = &Object; }
 	CRefCountPtr& operator = (const CRefCountPtr &ptr) { return *this = ptr.m_pObject; }
 

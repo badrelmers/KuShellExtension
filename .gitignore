@@ -18,4 +18,4 @@ x64/
 CVS/
 
 Makefile.deps
-KuShellExtension/
+/KuShellExtension
