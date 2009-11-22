@@ -179,7 +179,7 @@ STDMETHODIMP CKuContextMenu::HandleMenuMsg2(
 	{
 		case WM_MEASUREITEM:
 			{
-				MEASUREITEMSTRUCT* lpmis = (MEASUREITEMSTRUCT*)lParam;
+				MEASUREITEMSTRUCT* lpmis = (MEASUREITEMSTRUCT*) lParam;
 				if (!lpmis)
 					break;
 				lpmis->itemWidth += 2;
@@ -190,14 +190,16 @@ STDMETHODIMP CKuContextMenu::HandleMenuMsg2(
 			break;
 		case WM_DRAWITEM:
 			{
-				DRAWITEMSTRUCT* lpdis = (DRAWITEMSTRUCT*)lParam;
-				if ((lpdis==NULL)||(lpdis->CtlType != ODT_MENU))
-					return S_OK; //not for a menu
+				DRAWITEMSTRUCT* lpdis = (DRAWITEMSTRUCT*) lParam;
+				if (lpdis == NULL || lpdis->CtlType != ODT_MENU)
+					return S_OK; // it's not a menu
 				HICON hIcon = ((CKuMenuSet::CMenuItem *) lpdis->itemData)->GetIcon();
 				if (hIcon == NULL)
 					return S_OK;
+				// lpdis->rcItem.left will be 17 here in most cases.
+				// However, the desktop view in Win7 will be 2 here.
 				DrawIconEx(lpdis->hDC,
-					lpdis->rcItem.left - 16,
+					lpdis->rcItem.left - (lpdis->rcItem.left >= 16 ? 16 : 1),
 					lpdis->rcItem.top + (lpdis->rcItem.bottom - lpdis->rcItem.top - 16) / 2,
 					hIcon, 16, 16,
 					0, NULL, DI_NORMAL);
