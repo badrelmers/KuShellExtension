@@ -373,6 +373,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\NTFSLink.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\stdafx.cpp"
 				>
 				<FileConfiguration
@@ -443,6 +447,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\NTFSLink.h"
+				>
+			</File>
+			<File
 				RelativePath=".\pugxml.h"
 				>
 			</File>
@@ -468,38 +476,6 @@
 			Filter="rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav"
 			UniqueIdentifier="{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}"
 			>
-		</Filter>
-		<Filter
-			Name="FSLinks Sources"
-			>
-			<File
-				RelativePath=".\FSLinks\FSLinks.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\FSLinks\Misc.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\FSLinks\Reparse_Dir_HANDLE.cpp"
-				>
-			</File>
-		</Filter>
-		<Filter
-			Name="FSLinks Headers"
-			>
-			<File
-				RelativePath=".\FSLinks\FSLinks.h"
-				>
-			</File>
-			<File
-				RelativePath=".\FSLinks\Reparse_Dir_HANDLE.h"
-				>
-			</File>
-			<File
-				RelativePath=".\FSLinks\TMN_Win2k.h"
-				>
-			</File>
 		</Filter>
 		<Filter
 			Name="ATL Alternative"

@@ -32,6 +32,7 @@
 #include <tchar.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stddef.h>
 #include <io.h>
 #include <fcntl.h>
 

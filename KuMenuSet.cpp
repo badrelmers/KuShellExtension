@@ -22,7 +22,7 @@
 #include "StringConv.h"
 #include "globals.h"
 #include "dll.h"
-#include "FSLinks/FSLinks.h"
+#include "NTFSLink.h"
 
 #if defined(_MSC_VER) && defined(_DEBUG)
 	#pragma push_macro("new")
@@ -1334,12 +1334,8 @@ bool CKuMenuSet::CMenuItem::DropLinks(LPCTSTR sDir, LPCTSTR sPath, DWORD uFlags)
 	if (uType == DROP_SYMBOLIC)
 		return !!dll::CreateSymbolicLinkW(sLink, _tcsncmp(sTarget, _T(".\\"), 2) ? sTarget.GetString() : sTarget.GetString() + 2, PathIsDirectory(sPath) ? SYMBOLIC_LINK_FLAG_DIRECTORY : 0);
 	else if (uType == DROP_JUNCTION) {
-		if (!CreateDirectory(sLink, NULL))
+		if (!CreateJunctionPoint(sLink, sTarget))
 			return false;
-		if (!FSLinks::CreateJunctionPoint(sLink, sTarget)) {
-			RemoveDirectory(sLink);
-			return false;
-		}
 		return true;
 	}
 	else if (uType == DROP_HARDLINK)
