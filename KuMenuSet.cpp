@@ -582,11 +582,11 @@ void CKuMenuSet::InitBuiltinVars()
 			m_BuiltinVars.SetAt(_T("ArchName"), _T("x86"));
 			m_BuiltinVars.SetAt(_T("IsWin32"), _T("32"));
 			FOLDERID_SETVAR(FOLDERID_ProgramFiles, _T("ProgramFiles"));
-			m_BuiltinVars.SetAt(sOut, _T("ProgramFiles32"));
-			m_BuiltinVars.SetAt(sOut, _T("ProgramFiles64"));
+			m_BuiltinVars.SetAt(_T("ProgramFiles32"), sOut);
+			m_BuiltinVars.SetAt(_T("ProgramFiles64"), sOut);
 			FOLDERID_SETVAR(FOLDERID_System, _T("SysDir"));
-			m_BuiltinVars.SetAt(sOut, _T("SysDir32"));
-			m_BuiltinVars.SetAt(sOut, _T("SysDir64"));
+			m_BuiltinVars.SetAt(_T("SysDir32"), sOut);
+			m_BuiltinVars.SetAt(_T("SysDir64"), sOut);
 		}
 #endif // _WIN64
 
