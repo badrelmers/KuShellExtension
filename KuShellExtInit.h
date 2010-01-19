@@ -40,10 +40,20 @@ class CKuShellExtInitData
 {
 	IMPLEMENT_REFCOUNT()
 public:
-	CKuShellExtInitData() : m_bFromFolderBk(false) {}
+	CKuShellExtInitData() : m_bFromFolderBk(false), m_iType(0) {}
 
 	bool m_bFromFolderBk;
-	bool m_bIsDirectory;
+	enum {
+		TypeFile,
+		TypeDirectory = 1,
+		TypeDrive = 2 | TypeDirectory,
+		TypeDriveRemovable = (1 << 2) | TypeDrive,
+		TypeDriveFixed     = (2 << 2) | TypeDrive,
+		TypeDriveNetwork   = (3 << 2) | TypeDrive,
+		TypeDriveOptical   = (4 << 2) | TypeDrive,
+		TypeDriveRamdisk   = (5 << 2) | TypeDrive,
+	};
+	int m_iType;
 	CAtlArray<CString> m_aFiles;
 };
 

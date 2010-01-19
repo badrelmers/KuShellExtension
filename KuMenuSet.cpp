@@ -660,29 +660,140 @@ void CKuMenuSet::InitBuiltinVars()
 	}
 }
 
-bool CKuMenuSet::CMenuItem::IsOurPath(LPCTSTR sPath, bool bDir)
+bool WildMatch(LPCTSTR string, LPCTSTR wild)
 {
-	ASSERT(sPath);
+	// Written by Jack Handy - jakkhandy@hotmail.com
+	LPCTSTR cp = NULL, mp = NULL;
 
-	CString sClass, sClasses(m_sClasses);
+	while ((*string) && (*wild != '*')) {
+		if ((*wild != *string) && (*wild != '?')) {
+			return false;
+		}
+		wild++;
+		string++;
+	}
 
-	if (sClasses.IsEmpty())
-		sClasses = _T('*');
-	if (bDir)
-		sClass = _T("folder");
-	else
-		sClass = PathFindExtension(sPath);
+	while (*string) {
+		if (*wild == '*') {
+			if (!*++wild) {
+				return true;
+			}
+			mp = wild;
+			cp = string+1;
+		} else if ((*wild == *string) || (*wild == '?')) {
+			wild++;
+			string++;
+		} else {
+			wild = mp;
+			string = cp++;
+		}
+	}
 
-	CString sCurClass;
-	int i = 0;
-	while (!(sCurClass = sClasses.Tokenize(_T(" \t\r\n"), i)).IsEmpty()) {
-		if (sCurClass == _T('*') && sClass != _T("folder"))
-			return true;
-		if (!sClass.CompareNoCase(sCurClass))
-			return true;
+	while (*wild == '*') {
+		wild++;
+	}
+	return !*wild;
+}
+
+bool WildMatchPath(CString sPath, CString sWild)
+{
+	int iPathStart = 0, iWildStart = 0;
+	CString sPathTok, sWildTok;
+	while (!(sPathTok = sPath.Tokenize(_T("\\/"), iPathStart)).IsEmpty()) {
+		if ((sWildTok = sWild.Tokenize(_T("\\/"), iWildStart)).IsEmpty())
+			return false;
+		if (!WildMatch(sPathTok, sWildTok))
+			return false;
+	}
+	return true;
+}
+
+// "*": files
+// ".???": .??? files (file extension)
+// "folder": folders
+// "drive": drives
+// "drive:removable": removable drives
+// "drive:fixed": fixed drives
+// "drive:network": network drives
+// "drive:optical": optical drives
+// "drive:ramdisk": network drives
+// "at:PATH": the file at PATH
+// "in:DIR": the file in DIR
+bool CKuMenuSet::CMenuItem::IsOurPath(LPCTSTR sPath, int iType, LPWSTR *pClasses, int iClassesCount)
+{
+	if (iClassesCount <= 0)
+		return false;
+	CString sExt, sPathFixed(sPath);//, sClasses(m_sClasses);
+	bool bIsFile = !(iType & CKuShellExtInitData::TypeDirectory);
+	if (bIsFile)
+		sExt = PathFindExtension(sPath);
+	else {
+		// removes the trailing backslash
+		if (sPathFixed[sPathFixed.GetLength() - 1] == _T('\\'))
+			sPathFixed.Truncate(sPathFixed.GetLength() - 1);
+	}
+
+	LPWSTR sClass;
+	int i;
+	for (i = 0;i < iClassesCount;i++) {
+		sClass = pClasses[i];
+		if (bIsFile) {
+			if (!_tcscmp(sClass, _T("*")) || !_tcscmp(sClass, _T("file")))
+				return true;
+			if (sClass[0] == _T('.') && !sExt.CompareNoCase(sClass))
+				return true;
+		}
+		else {
+			if (!_tcscmp(sClass, _T("folder")) || !_tcscmp(sClass, _T("directory")))
+				return true;
+			if ((iType & CKuShellExtInitData::TypeDrive) == CKuShellExtInitData::TypeDrive) {
+				if (!_tcscmp(sClass, _T("drive")))
+					return true;
+				switch (iType) {
+					case CKuShellExtInitData::TypeDriveRemovable:
+						if (!_tcscmp(sClass, _T("drive:removable")))
+							return true;
+						break;
+					case CKuShellExtInitData::TypeDriveFixed:
+						if (!_tcscmp(sClass, _T("drive:fixed")))
+							return true;
+						break;
+					case CKuShellExtInitData::TypeDriveNetwork:
+						if (!_tcscmp(sClass, _T("drive:network")))
+							return true;
+						break;
+					case CKuShellExtInitData::TypeDriveOptical:
+						if (!_tcscmp(sClass, _T("drive:optical")))
+							return true;
+						break;
+					case CKuShellExtInitData::TypeDriveRamdisk:
+						if (!_tcscmp(sClass, _T("drive:ramdisk")))
+							return true;
+						break;
+				}
+			}
+		}
+		if (!_tcsncmp(sClass, _T("at:"), 3)) {
+			if (WildMatchPath(sPathFixed, sClass + 3))
+				return true;
+		}
+		if (!_tcsncmp(sClass, _T("in:"), 3)) {
+			if (PathIsPrefix(sClass + 3, sPathFixed))
+				return true;
+		}
 	}
 
 	return false;
+}
+bool CKuMenuSet::CMenuItem::IsOurPath(LPCTSTR sPath, int iType)
+{
+	ASSERT(sPath);
+
+	int iClassesCount;
+	LPWSTR *pClasses = CommandLineToArgvW(m_sClasses.IsEmpty() ? _T("*") : m_sClasses, &iClassesCount);
+	bool bRet = IsOurPath(sPath, iType, pClasses, iClassesCount);
+	LocalFree(pClasses);
+	return bRet;
 }
 
 CKuMenuSet::CMenuItem::CMD_ID CKuMenuSet::CMenuItem::GetCmdId(LPCTSTR sCmd)
@@ -710,7 +821,7 @@ bool CKuMenuSet::CMenuItem::ShouldShown()
 			if (!pItem->IsSeparator() && pItem->ShouldShown()) {
 				if (m_sClasses.IsEmpty())
 					return true;
-				return IsOurPath(m_pKuMenuSet->m_pData->m_aFiles[0], m_pKuMenuSet->m_pData->m_bIsDirectory);
+				return IsOurPath(m_pKuMenuSet->m_pData->m_aFiles[0], m_pKuMenuSet->m_pData->m_iType);
 			}
 		return false;
 	}
@@ -766,8 +877,8 @@ bool CKuMenuSet::CMenuItem::ShouldShown()
 			// no break!!
 		case ACT_EXECUTE:
 			if (m_sClasses.IsEmpty() && m_pParent)
-				return m_pParent->IsOurPath(m_pKuMenuSet->m_pData->m_aFiles[0], m_pKuMenuSet->m_pData->m_bIsDirectory);
-			return IsOurPath(m_pKuMenuSet->m_pData->m_aFiles[0], m_pKuMenuSet->m_pData->m_bIsDirectory);
+				return m_pParent->IsOurPath(m_pKuMenuSet->m_pData->m_aFiles[0], m_pKuMenuSet->m_pData->m_iType);
+			return IsOurPath(m_pKuMenuSet->m_pData->m_aFiles[0], m_pKuMenuSet->m_pData->m_iType);
 	}
 	return false;
 }
@@ -1008,7 +1119,7 @@ bool CKuMenuSet::CMenuItem::InvokeCommand()
 						PathRemoveFileSpec(str);
 						pShellExecuteThread->m_sWorkingDir.ReleaseBuffer();
 					}
-					else if (!_tcsncmp(m_sWorkingDir, _T(".\\"), 2) && m_pKuMenuSet->m_pData->m_bIsDirectory)
+					else if (!_tcsncmp(m_sWorkingDir, _T(".\\"), 2) && (m_pKuMenuSet->m_pData->m_iType & CKuShellExtInitData::TypeDirectory))
 						pShellExecuteThread->m_sWorkingDir = m_pKuMenuSet->m_pData->m_aFiles[0] + (m_sWorkingDir.GetString() + 1);
 					else
 						pShellExecuteThread->m_sWorkingDir = m_sWorkingDir;

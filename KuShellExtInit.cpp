@@ -54,6 +54,7 @@ STDMETHODIMP CKuShellExtInit::Initialize(
     HKEY hkeyProgID)
 {
 	m_pData->m_aFiles.RemoveAll();
+	m_pData->m_iType = CKuShellExtInitData::TypeFile;
 
     // If a data object pointer was passed in, save it and
     // extract the file name. 
@@ -79,7 +80,8 @@ STDMETHODIMP CKuShellExtInit::Initialize(
         }
 
 		m_pData->m_bFromFolderBk = false;
-		m_pData->m_bIsDirectory = !!PathIsDirectory(m_pData->m_aFiles[0]);
+		if (PathIsDirectory(m_pData->m_aFiles[0]))
+			m_pData->m_iType = CKuShellExtInitData::TypeDirectory;
     }
 	else if (pidlFolder) {
 		m_pData->m_aFiles.SetCount(1);
@@ -87,7 +89,33 @@ STDMETHODIMP CKuShellExtInit::Initialize(
 		m_pData->m_aFiles[0].ReleaseBuffer();
 
 		m_pData->m_bFromFolderBk = true;
-		m_pData->m_bIsDirectory = true;
+		m_pData->m_iType = CKuShellExtInitData::TypeDirectory;
+	}
+	
+	if (PathIsRoot(m_pData->m_aFiles[0])) {
+		CString sPath = m_pData->m_aFiles[0];
+		if (sPath[sPath.GetLength() - 1] != _T('\\'))
+			sPath += _T('\\');
+		switch(GetDriveType(sPath)) {
+			case DRIVE_REMOVABLE:
+				m_pData->m_iType = CKuShellExtInitData::TypeDriveRemovable;
+				break;
+			case DRIVE_FIXED:
+				m_pData->m_iType = CKuShellExtInitData::TypeDriveFixed;
+				break;
+			case DRIVE_REMOTE:
+				m_pData->m_iType = CKuShellExtInitData::TypeDriveNetwork;
+				break;
+			case DRIVE_CDROM:
+				m_pData->m_iType = CKuShellExtInitData::TypeDriveOptical;
+				break;
+			case DRIVE_RAMDISK:
+				m_pData->m_iType = CKuShellExtInitData::TypeDriveRamdisk;
+				break;
+			case DRIVE_UNKNOWN:
+				m_pData->m_iType = CKuShellExtInitData::TypeDrive;
+				break;
+		}
 	}
 
 	if (m_pData->GetRefCount() > 1)

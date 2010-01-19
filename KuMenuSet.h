@@ -69,7 +69,8 @@ public:
 
 		bool IsSubMenu() { return m_pFirstChild != NULL; }
 		bool IsSeparator() { return !m_sName.Compare(_T("----")); }
-		bool IsOurPath(LPCTSTR sPath, bool bDir);
+		bool IsOurPath(LPCTSTR sPath, int iType);
+		static bool IsOurPath(LPCTSTR sPath, int iType, LPWSTR *pClasses, int iClassesCount);
 		bool ShouldShown();
 
 		void QueryContextMenu(HMENU hMenu, UINT &indexMenu, UINT &idCmdFirst, UINT idCmdLast, UINT uFlags);
