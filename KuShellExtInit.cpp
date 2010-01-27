@@ -39,8 +39,10 @@ STDMETHODIMP CKuShellExtInit::QueryInterface(
 		*ppvObject = p;
 		return S_OK;
 	}
-	else
+	else {
+		*ppvObject = NULL;
 		return E_NOINTERFACE;
+	}
 	AddRef();
 	return S_OK;
 }

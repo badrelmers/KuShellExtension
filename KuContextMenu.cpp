@@ -38,8 +38,10 @@ STDMETHODIMP CKuContextMenu::QueryInterface(
 	}
 	else if (riid == IID_IContextMenu3 || riid == IID_IContextMenu2 || riid == IID_IContextMenu || riid == IID_IUnknown)
 		*ppvObject = this;
-	else
+	else {
+		*ppvObject = NULL;
 		return E_NOINTERFACE;
+	}
 	AddRef();
 	return S_OK;
 }
@@ -57,7 +59,7 @@ STDMETHODIMP CKuContextMenu::QueryContextMenu(
 	UINT uFlags)
 {
 	if (!m_pData)
-		return E_UNEXPECTED;
+		return E_INVALIDARG;
 	g_menu.m_pData = m_pData;
 	m_pData = NULL;
 

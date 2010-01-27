@@ -29,8 +29,10 @@ STDMETHODIMP CKuShellExtensionFactory::QueryInterface(
 {
 	if (riid == IID_IClassFactory || riid == IID_IUnknown)
 		*ppvObject = this;
-	else
+	else {
+		*ppvObject = NULL;
 		return E_NOINTERFACE;
+	}
 	AddRef();
 	return S_OK;
 }
