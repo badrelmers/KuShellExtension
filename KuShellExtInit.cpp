@@ -65,7 +65,7 @@ STDMETHODIMP CKuShellExtInit::Initialize(
         FORMATETC   fe = {CF_HDROP, NULL, DVASPECT_CONTENT, -1, TYMED_HGLOBAL};
         UINT        uCount;
 
-        if(SUCCEEDED(pdtobj->GetData(&fe, &medium)))
+        if (SUCCEEDED(pdtobj->GetData(&fe, &medium)))
         {
             // Get the count of files dropped.
             uCount = DragQueryFile((HDROP)medium.hGlobal, (UINT)-1, NULL, 0);
@@ -90,15 +90,23 @@ STDMETHODIMP CKuShellExtInit::Initialize(
 		SHGetPathFromIDList(pidlFolder, m_pData->m_aFiles[0].GetBufferSetLength(KU_MAX_PATH));
 		m_pData->m_aFiles[0].ReleaseBuffer();
 
+		// In some cases this can happen.
+		if (m_pData->m_aFiles[0].IsEmpty()) {
+			m_pData->m_aFiles.RemoveAll();
+			return E_UNEXPECTED;
+		}
+
 		m_pData->m_bFromFolderBk = true;
 		m_pData->m_iType = CKuShellExtInitData::TypeDirectory;
 	}
-	
+	else
+		return E_UNEXPECTED;
+
 	if (PathIsRoot(m_pData->m_aFiles[0])) {
 		CString sPath = m_pData->m_aFiles[0];
 		if (sPath[sPath.GetLength() - 1] != _T('\\'))
 			sPath += _T('\\');
-		switch(GetDriveType(sPath)) {
+		switch (GetDriveType(sPath)) {
 			case DRIVE_REMOVABLE:
 				m_pData->m_iType = CKuShellExtInitData::TypeDriveRemovable;
 				break;
