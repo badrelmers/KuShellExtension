@@ -1,5 +1,5 @@
 /* This file is part of KuShellExtension
- * Copyright (C) 2008-2009 Kai-Chieh Ku (kjackie@gmail.com)
+ * Copyright (C) 2008-2010 Kai-Chieh Ku (kjackie@gmail.com)
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
