@@ -50,7 +50,7 @@ VARIABLES
           Pictures, CommonPictures, Music, CommonMusic, Video, CommonVideo,
           Desktop, CommonDesktop, Startup, CommonStartup, Downloads, CommonDownloads
 
-    configure purpose varables:
+    varables for configration:
     	These varables will affect KuShellExtension in some way, you shouldn't use them other than configure KuShellExtension.
 
     	LEGACY_STYLE (boolean):
@@ -124,11 +124,19 @@ ATTRIBUTES
         .???        Matches file extension
         *           Matches all files
         folder      Matches all folders
+		drive       Matches all drives
+		drive:removable  Matches all removable drives
+		drive:fixed      Matches all fixed drives
+		drive:network    Matches all network drives
+		drive:optical    Matches all optical drives
+		drive:ramdisk    Matches all network drives
+		at:PATH          Matches the files at PATH with wildcard
+		in:DIR           Matches the files in DIR
 
         If the class of a submenu(<menu>) is not specified, it will be shown if there is a child entry should be shown. On the other hand, if the class of a menu(<menuitem>) is not specified, it will use it parent setting if it exists, or "*" will be used.
 
     "action="
-        The type of the action when user click on the menu entry, current only two type are available. The first is "execute", which is the default, it means execute the command line defined in the (text) node. The second is "builtin", which means the action is pre-defined by KuShellExtension, see BUILTIN ACTIONS section for details.
+        The type of the action when user click on the menu entry, current only two type are available. The first is "execute", which is the default, it means execute the command line defined in the (text) node. The second is "builtin", which means the action is pre-defined by KuShellExtension, see BUILT-IN ACTIONS section for details.
 
     "console="
         Set this to true if the application is a console program and you would like to hide the command prompt window. Don't use it with normal GUI programs.
@@ -140,9 +148,9 @@ ATTRIBUTES
         The working directory to execute the command. "." (a single dot) causes KuShellExtension to use the directory of the executable file. ".\" causes KuShellExtension always use the selected directory.
 
 ACTIONS
-    Normal actions is described as a command line, for the usability, some (dynamic) variables are allowed (see % EXPENSION below). Note you may need to use quotes for the strings that contains spaces, but do not use " directly, because it is not allowed in XML, use &quot; instead.
+    Normal actions is described as a command line, for the usability, some (dynamic) variables are allowed (see % EXPANSION below). Note you may need to use quotes for the strings that contains spaces, but do not use " directly, because it is not allowed in XML, use &quot; instead.
 
-% EXPENSION
+% EXPANSION
     %1 %2 %3 ... %9
         Expand to the first, second, third, ... file the user selected.
     %w
@@ -164,8 +172,8 @@ ACTIONS
     %%
         Expand to '%' character.
 
-PREFIX OF % EXPENSION
-    Some prefix can be use in % EXPENSION, the format is like Windows Command Prompt. The following are available prefix characters.
+MODIFIERS OF % EXPANSION
+    Some modifiers can be use in % EXPANSION, the format is like Windows Command Prompt. The following are available modifier characters.
 
     d
         Drive letter.
@@ -185,7 +193,7 @@ PREFIX OF % EXPENSION
         %~nx1 = "file.txt"
         %~dpn1 = "C:\path\to\the\file"
 
-BUILTIN ACTIONS
+BUILT-IN ACTIONS
     DropSymLinks [0|1]
         Create symbolic links (>= Vista), the target of links are taken from clipboard. This command takes one argument with the value 0 or 1. Use 0 to create the links with relative path, 1 to create the links with absolute path.
     DropJunctions
