@@ -24,11 +24,48 @@ namespace pug {
 	class xml_node;
 }
 
+class CSetCurrentDirectory
+{
+public:
+	CSetCurrentDirectory(LPCTSTR sDir)
+	{
+		GetCurrentDirectory(KU_MAX_PATH, m_sOldDir.GetBufferSetLength(KU_MAX_PATH));
+		SetCurrentDirectory(sDir);
+	}
+	~CSetCurrentDirectory() { SetCurrentDirectory(m_sOldDir); }
+private:
+	CString m_sOldDir;
+};
+
 class CKuMenuSet
 {
 	friend class CMenuItem;
 
 public:
+	enum ACTION {
+		  ACT_EXECUTE
+		, ACT_BULITIN
+	};
+	enum CMD_ID {
+		  CMD_ID_NULL
+		, CMD_ID_DROP_SYMLINKS
+		, CMD_ID_DROP_JUNCTIONS
+		, CMD_ID_DROP_HARDLINKS
+		, CMD_ID_RELOAD
+		, CMD_ID_RENAME
+	};
+
+	class CMenuItemData
+	{
+		IMPLEMENT_REFCOUNT()
+	public:
+		CMenuItemData() : m_eAction(ACT_EXECUTE), m_bConsole(true) {}
+		ACTION m_eAction;
+		CString m_sAction;
+		CString m_sWorkingDir;
+		bool m_bConsole;
+	};
+
 	class CMenuItem
 	{
 	public:
@@ -36,24 +73,11 @@ public:
 	private:
 		friend class CKuMenuSet;
 
-		enum ACTION {
-			ACT_EXECUTE,
-			ACT_BULITIN
-		};
-
-		enum CMD_ID {
-			CMD_ID_NULL,
-			CMD_ID_DROP_SYMLINKS,
-			CMD_ID_DROP_JUNCTIONS,
-			CMD_ID_DROP_HARDLINKS,
-			CMD_ID_RELOAD
-		};
-
 		static CMD_ID GetCmdId(LPCTSTR sCmd);
 
 		explicit CMenuItem(CKuMenuSet *pKuMenuSet)
 			: m_pParent(NULL), m_pPrevSibling(NULL), m_pNextSibling(NULL), m_pFirstChild(NULL),
-			m_eAction(ACT_EXECUTE), m_hIcon(NULL), m_dwMultiItems(1), m_bConsole(true), m_pKuMenuSet(pKuMenuSet), m_hBitmap(NULL)
+			 m_hIcon(NULL), m_dwMultiItems(1), m_pKuMenuSet(pKuMenuSet), m_hBitmap(NULL), m_d(new CMenuItemData)
 		{ ASSERT(m_pKuMenuSet); }
 		virtual ~CMenuItem()
 		{
@@ -87,7 +111,6 @@ public:
 		{ return GetLastSibling() == this; }
 
 		static LPCTSTR ExpandFileName(LPCTSTR sName, LPCTSTR sFlags, CString &sDest);
-		static DWORD WINAPI ShellExecuteThread(LPVOID lpParameter);
 
 		enum {
 			DROP_SYMBOLIC = 0x00000000,
@@ -104,29 +127,38 @@ public:
 		CMenuItem *m_pFirstChild;
 		CString m_sName;
 		CString m_sClasses;
-		ACTION m_eAction;
-		CString m_sAction;
-		CString m_sWorkingDir;
 		HICON m_hIcon;
 		HBITMAP m_hBitmap;
 		DWORD m_dwMultiItems;
-		bool m_bConsole;
 		CAtlMap<CString, CString> m_vars;
+		CRefCountPtr<CMenuItemData> m_d;
 
-		class CShellExecuteThread
+		class CInvokeCommandThread
 		{
 		public:
-			CShellExecuteThread() : m_bConsole(true) {}
-			virtual ~CShellExecuteThread()
+			CInvokeCommandThread() : m_pArgv(NULL) {}
+			virtual ~CInvokeCommandThread()
 			{
 				if (!m_sTempFile.IsEmpty())
 					DeleteFile(m_sTempFile);
+				if (m_pArgv)
+					LocalFree(m_pArgv);
 			}
 
-			CAtlArray<CString> m_aCmds;
+			static DWORD WINAPI _ThreadProc(LPVOID lpParameter)
+			{
+				DWORD r = ((CInvokeCommandThread *) lpParameter)->ThreadProc();
+				delete ((CInvokeCommandThread *) lpParameter);
+				return r;
+			}
+			DWORD ThreadProc();
+
+			int m_iArgc;
+			LPWSTR *m_pArgv;
+			CMD_ID m_cmdId;
 			CString m_sTempFile;
-			CString m_sWorkingDir;
-			bool m_bConsole;
+			CRefCountPtr<CMenuItemData> m_d;
+			CRefCountPtr<CKuShellExtInitData> m_pData;
 		};
 	};
 

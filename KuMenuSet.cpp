@@ -29,6 +29,7 @@
 	#undef new
 #endif
 #include "pugxml.h"
+#include <memory>
 #if defined(_MSC_VER) && defined(_DEBUG)
 	#pragma pop_macro("new")
 #endif
@@ -172,15 +173,15 @@ void CKuMenuSet::PraseMenuItems(pug::xml_node &node, CMenuItem *pItem)
 			if (!_tcsicmp(node.name(), _T("menuitem")) && node.children() > 0) {
 				CString str;
 				if (!_tcsicmp(Substitute(node.attribute(_T("action")).value(), str, pItem), _T("builtin")))
-					pItem->m_eAction = CMenuItem::ACT_BULITIN;
+					pItem->m_d->m_eAction = ACT_BULITIN;
 				else
-					pItem->m_eAction = CMenuItem::ACT_EXECUTE;
-				Substitute(node.child(0).value(), pItem->m_sAction, pItem);
+					pItem->m_d->m_eAction = ACT_EXECUTE;
+				Substitute(node.child(0).value(), pItem->m_d->m_sAction, pItem);
 				pItem->m_dwMultiItems = 1;
 				if (node.has_attribute(_T("multiple")))
 					pItem->m_dwMultiItems = (DWORD) _ttoi(Substitute(node.attribute(_T("multiple")).value(), str, pItem));
-				else if (pItem->m_eAction == CMenuItem::ACT_EXECUTE) {
-					for (LPCTSTR ptr = pItem->m_sAction;*ptr;ptr++) {
+				else {
+					for (LPCTSTR ptr = pItem->m_d->m_sAction;*ptr;ptr++) {
 						if (ptr[0] == _T('%')) {
 							if (ptr[1] == _T('~')) {
 								ptr++;
@@ -202,8 +203,8 @@ void CKuMenuSet::PraseMenuItems(pug::xml_node &node, CMenuItem *pItem)
 					}
 				}
 				bool bHideMissing = GetBoolean(_T("HIDE_MISSING"));
-				if ((sIcon.IsEmpty() || bHideMissing) && pItem->m_eAction == CMenuItem::ACT_EXECUTE) {
-					CString sProg = pItem->m_sAction;
+				if ((sIcon.IsEmpty() || bHideMissing) && pItem->m_d->m_eAction == ACT_EXECUTE) {
+					CString sProg = pItem->m_d->m_sAction;
 					LPTSTR pIcon = sProg.GetBuffer();
 					PathRemoveArgs(pIcon);
 					PathUnquoteSpaces(pIcon);
@@ -213,8 +214,8 @@ void CKuMenuSet::PraseMenuItems(pug::xml_node &node, CMenuItem *pItem)
 					if (bHideMissing && !PathFileExists(sProg)) {
 						pItem->m_sName.Empty();
 						pItem->m_sClasses.Empty();
-						pItem->m_eAction = CMenuItem::ACT_EXECUTE;
-						pItem->m_bConsole = false;
+						pItem->m_d->m_eAction = ACT_EXECUTE;
+						pItem->m_d->m_bConsole = false;
 						pItem->m_dwMultiItems = 1;
 						continue;
 					}	
@@ -222,8 +223,8 @@ void CKuMenuSet::PraseMenuItems(pug::xml_node &node, CMenuItem *pItem)
 						sIcon = sProg;
 				}
 				Substitute(node.attribute(_T("console")).value(), str, pItem);
-				pItem->m_bConsole = !!str.CompareNoCase(_T("false"));
-				Substitute(node.attribute(_T("workdir")).value(), pItem->m_sWorkingDir, pItem);
+				pItem->m_d->m_bConsole = !!str.CompareNoCase(_T("false"));
+				Substitute(node.attribute(_T("workdir")).value(), pItem->m_d->m_sWorkingDir, pItem);
 			}
 			if (!sIcon.IsEmpty()) {
 				LPTSTR pIcon = sIcon.GetBuffer();
@@ -796,7 +797,7 @@ bool CKuMenuSet::CMenuItem::IsOurPath(LPCTSTR sPath, int iType)
 	return bRet;
 }
 
-CKuMenuSet::CMenuItem::CMD_ID CKuMenuSet::CMenuItem::GetCmdId(LPCTSTR sCmd)
+CKuMenuSet::CMD_ID CKuMenuSet::CMenuItem::GetCmdId(LPCTSTR sCmd)
 {
 	if (!_tcscmp(sCmd, _T("DropSymLinks")))
 		return CMD_ID_DROP_SYMLINKS;
@@ -806,6 +807,8 @@ CKuMenuSet::CMenuItem::CMD_ID CKuMenuSet::CMenuItem::GetCmdId(LPCTSTR sCmd)
 		return CMD_ID_DROP_HARDLINKS;
 	else if (!_tcscmp(sCmd, _T("Reload")))
 		return CMD_ID_RELOAD;
+	else if (!_tcscmp(sCmd, _T("Rename")))
+		return CMD_ID_RENAME;
 	return CMD_ID_NULL;
 }
 
@@ -827,13 +830,13 @@ bool CKuMenuSet::CMenuItem::ShouldShown()
 	}
 	if (m_dwMultiItems != m_pKuMenuSet->m_pData->m_aFiles.GetCount() && m_dwMultiItems != 0 && !IsSeparator())
 		return false;
-	switch (m_eAction) {
+	switch (m_d->m_eAction) {
 		case ACT_BULITIN:
 			{
 				int argc;
 				bool ret = false;
 				LPWSTR *argv;
-				argv = CommandLineToArgvW(m_sAction, &argc);
+				argv = CommandLineToArgvW(m_d->m_sAction, &argc);
 				if (argv) {
 					if (argc > 0) {
 						CMD_ID iCmd = GetCmdId(argv[0]);
@@ -865,6 +868,7 @@ bool CKuMenuSet::CMenuItem::ShouldShown()
 								}
 								break;
 							case CMD_ID_RELOAD:
+							case CMD_ID_RENAME:
 								ret = true;
 								break;
 						}
@@ -935,322 +939,337 @@ void CKuMenuSet::CMenuItem::QueryContextMenu(HMENU hMenu, UINT &indexMenu, UINT 
 
 bool CKuMenuSet::CMenuItem::InvokeCommand()
 {
-	bool bResult = true;
-	switch (m_eAction) {
-		case ACT_EXECUTE:
-			{
-				CString sExpand;
-				CShellExecuteThread *pShellExecuteThread = new CShellExecuteThread;
+	std::auto_ptr<CInvokeCommandThread> p(new CInvokeCommandThread);
 
-				pShellExecuteThread->m_bConsole = m_bConsole; 
-				pShellExecuteThread->m_sWorkingDir = m_pKuMenuSet->m_pData->m_aFiles[0];
-				if (!m_pKuMenuSet->m_pData->m_bFromFolderBk) {
-					PathRemoveFileSpec(pShellExecuteThread->m_sWorkingDir.GetBuffer());
-					pShellExecuteThread->m_sWorkingDir.ReleaseBuffer();
+	if (m_d->m_eAction == ACT_BULITIN) {
+		p->m_pArgv = CommandLineToArgvW(m_d->m_sAction, &p->m_iArgc);
+		if (p->m_iArgc > 0) {
+			p->m_cmdId = GetCmdId(p->m_pArgv[0]);
+			switch (p->m_cmdId) {
+				case CMD_ID_RELOAD:
+					ku::cfgFileInfo.nFileSizeLow = ku::cfgFileInfo.nFileSizeHigh = 0; // will reload at the next time
+					return true;
+			}
+		}
+		else
+			return false;
+	}
+
+	p->m_d = m_d;
+	p->m_pData = m_pKuMenuSet->m_pData;
+
+	HANDLE hThread = CreateThread(NULL, 0, CInvokeCommandThread::_ThreadProc, (LPVOID) p.get(), 0, NULL);
+	if (hThread) {
+		CloseHandle(hThread);
+		p.release();
+	}
+	else
+		return false;
+
+	return true;
+}
+
+
+DWORD CKuMenuSet::CMenuItem::CInvokeCommandThread::ThreadProc()
+{
+	CString sExpand;
+	CAtlArray<CString> aCmds;
+	DWORD dwResult = 0;
+
+	CString sWorkingDir = m_pData->m_aFiles[0];
+	if (!m_pData->m_bFromFolderBk) {
+		PathRemoveFileSpec(sWorkingDir.GetBuffer());
+		sWorkingDir.ReleaseBuffer();
+	}
+
+	aCmds.SetCount(1);
+	aCmds[0].Empty();
+
+	for (LPTSTR ptr = (LPTSTR) m_d->m_sAction.GetString();*ptr;ptr++) {
+		if (ptr[0] == _T('%')) {
+			LPCTSTR sFlags = ptr + 1;
+			size_t count = m_pData->m_aFiles.GetCount();
+			if (count > 0) {
+				if (ptr[1] == _T('~')) {
+					ptr++;
+					ptr += _tcsspn(ptr + 1, _T(PERCENT_EXPANSION_FLAGS));
 				}
-
-				CAtlArray<CString> &aCmds = pShellExecuteThread->m_aCmds;
-				aCmds.RemoveAll();
-				aCmds.SetCount(1);
-				aCmds[0].Empty();
-
-				for (LPTSTR ptr = (LPTSTR) m_sAction.GetString();*ptr;ptr++) {
-					if (ptr[0] == _T('%')) {
-						LPCTSTR sFlags = ptr + 1;
-						size_t count = m_pKuMenuSet->m_pData->m_aFiles.GetCount();
-						if (count > 0) {
-							if (ptr[1] == _T('~')) {
-								ptr++;
-								ptr += _tcsspn(ptr + 1, _T(PERCENT_EXPANSION_FLAGS));
-							}
-							if (ptr[1] == _T('*')) {
-								ptr[1] = _T('\0');
-								for (size_t i = 0;i < count;i++)
-									for (size_t n = 0;n < aCmds.GetCount();n++)
-										aCmds[n].AppendFormat(_T("%s\"%s\""), (i == 0 ? _T("") : _T(" ")), ExpandFileName(m_pKuMenuSet->m_pData->m_aFiles[i], sFlags, sExpand));
-								ptr[1] = _T('*');
-							}
-							else if (ptr[1] == _T('@')) {
-								ptr[1] = _T('\0');
-								if (aCmds.GetCount() < count) {
-									aCmds.SetCount(count); 
-									for (size_t i = 1;i < count;i++)
-										aCmds[i] = aCmds[0];
-								}
-								for (size_t i = 0;i < count;i++)
-									aCmds[i].AppendFormat(_T("\"%s\""), ExpandFileName(m_pKuMenuSet->m_pData->m_aFiles[i], sFlags, sExpand));
-								ptr[1] = _T('@');
-							}
-							else if (ptr[1] >= _T('1') && ptr[1] <= _T('9')) {
-								TCHAR ch = ptr[1];
-								ptr[1] = _T('\0');
-								int i = ch - _T('1');
-								if (i <= count - 1)
-									for (size_t n = 0;n < aCmds.GetCount();n++)
-										aCmds[n] += ExpandFileName(m_pKuMenuSet->m_pData->m_aFiles[i], sFlags, sExpand);
-								ptr[1] = ch;
-							}
-							else if (ptr[1] == _T('w')) {
-								ExpandFileName(pShellExecuteThread->m_sWorkingDir, sFlags, sExpand);
-								for (size_t n = 0;n < aCmds.GetCount();n++)
-									aCmds[n] += sExpand;
-							}
-							else if (ptr[1] == _T('z')) {
-								LPCTSTR str = PathFindFileName((count > 1) ? pShellExecuteThread->m_sWorkingDir : m_pKuMenuSet->m_pData->m_aFiles[0]);
-								if (str)
-									for (size_t n = 0;n < aCmds.GetCount();n++)
-										aCmds[n] += str;
-							}
-							else if (ptr[1] == _T('c')) {
-								int i = -1;
-								if (ptr[2] >= _T('0') && ptr[2] <= _T('9')) {
-									i = ptr[2] - _T('0');
-									ptr++;
-								}
-								if (!OpenClipboard(NULL))
-									break;
-								HDROP hDrop = (HDROP) GetClipboardData(CF_HDROP);
-								if (hDrop) {
-									TCHAR sFile[KU_MAX_PATH];
-									UINT uCount = DragQueryFile(hDrop, (UINT)-1, NULL, 0);
-									if (i != -1) {
-										if ((UINT) i < uCount && DragQueryFile(hDrop, i, sFile, _countof(sFile)))
-											for (size_t n = 0;n < aCmds.GetCount();n++)
-												aCmds[n] += ExpandFileName(sFile, sFlags, sExpand);
-									}
-									else {
-										for (i = 0;(UINT) i < uCount;i++) {
-											if (DragQueryFile(hDrop, i, sFile, _countof(sFile)))
-												for (size_t n = 0;n < aCmds.GetCount();n++)
-													aCmds[n].AppendFormat(_T("%s\"%s\""), (i == 0 ? _T("") : _T(" ")), ExpandFileName(sFile, sFlags, sExpand));
-										}
-									}
-								}
-								CloseClipboard();
-							}
-							else if (ptr[1] >= _T('L') || ptr[1] >= _T('l') || ptr[1] >= _T('u')) {
-								size_t offset = _tcsspn(ptr + 2, _T("0123456789"));
-								int iFrom = 0;
-								if (offset > 0)
-									_stscanf(ptr + 2, _T("%d"), &iFrom);
-								if (pShellExecuteThread->m_sTempFile.IsEmpty()) {
-									TCHAR sTempPath[KU_MAX_PATH];
-									if (GetTempPath(_countof(sTempPath), sTempPath)) {
-										if (GetTempFileName(sTempPath, _T("ku."), 0, pShellExecuteThread->m_sTempFile.GetBufferSetLength(KU_MAX_PATH))) {
-											pShellExecuteThread->m_sTempFile.ReleaseBuffer();
-											HANDLE hFile = CreateFile(pShellExecuteThread->m_sTempFile, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_TEMPORARY, NULL);
-											if (hFile != INVALID_HANDLE_VALUE) {
-												BYTE bom[3];
-												DWORD dwWritten;
-												BYTE eol[4];
-
-												switch (ptr[1]) {
-													case _T('L'):
-														bom[0] = 0xFF;
-														bom[1] = 0xFE;
-														*((wchar_t *)eol) = L'\r';
-														*(((wchar_t *)eol) + 1) = L'\n';
-														if (WriteFile(hFile, bom, 2, &dwWritten, NULL)) {
-															for (int i = iFrom;i < count;i++) {
-																ExpandFileName(m_pKuMenuSet->m_pData->m_aFiles[i], sFlags, sExpand);
-																if (!WriteFile(hFile, (LPCVOID) sExpand.GetString(), sExpand.GetLength() * sizeof(wchar_t), &dwWritten, NULL) ||
-																	!WriteFile(hFile, (LPCVOID) eol, 4, &dwWritten, NULL))
-																	break;
-															}
-														}
-														break;
-													case _T('l'):
-														eol[0] = '\r';
-														eol[1] = '\n';
-														for (int i = iFrom;i < count;i++) {
-															CStringCharFromWChar sFile(ExpandFileName(m_pKuMenuSet->m_pData->m_aFiles[i], sFlags, sExpand));
-															if (!WriteFile(hFile, (LPCVOID) sFile.GetString(), sFile.GetLength() * sizeof(char), &dwWritten, NULL) ||
-																!WriteFile(hFile, (LPCVOID) eol, 2, &dwWritten, NULL))
-																break;
-														}
-														break;
-													case _T('u'):
-														bom[0] = 0xEF;
-														bom[1] = 0xBB;
-														bom[2] = 0xBF;
-														eol[0] = '\r';
-														eol[1] = '\n';
-														if (WriteFile(hFile, bom, 3, &dwWritten, NULL)) {
-															for (int i = iFrom;i < count;i++) {
-																CStringUTF8FromWChar sFile(ExpandFileName(m_pKuMenuSet->m_pData->m_aFiles[i], sFlags, sExpand));
-																if (!WriteFile(hFile, (LPCVOID) sFile.GetString(), sFile.GetLength() * sizeof(char), &dwWritten, NULL) ||
-																	!WriteFile(hFile, (LPCVOID) eol, 2, &dwWritten, NULL))
-																	break;
-															}
-														}
-														break;
-												}
-												for (size_t n = 0;n < aCmds.GetCount();n++)
-													aCmds[n] += pShellExecuteThread->m_sTempFile;
-												CloseHandle(hFile);
-											}
-											else
-												pShellExecuteThread->m_sTempFile.Empty();
-										}
-										else
-											pShellExecuteThread->m_sTempFile.ReleaseBuffer();
-									}
-								}
-
-								ptr += offset;
-							}
-						}
-						if (ptr[1] == _T('%'))
-							for (size_t n = 0;n < aCmds.GetCount();n++)
-								aCmds[n] += _T('%');
+				if (ptr[1] == _T('*')) {
+					ptr[1] = _T('\0');
+					for (size_t i = 0;i < count;i++)
+						for (size_t n = 0;n < aCmds.GetCount();n++)
+							aCmds[n].AppendFormat(_T("%s\"%s\""), (i == 0 ? _T("") : _T(" ")), ExpandFileName(m_pData->m_aFiles[i], sFlags, sExpand));
+					ptr[1] = _T('*');
+				}
+				else if (ptr[1] == _T('@')) {
+					ptr[1] = _T('\0');
+					if (aCmds.GetCount() < count) {
+						aCmds.SetCount(count); 
+						for (size_t i = 1;i < count;i++)
+							aCmds[i] = aCmds[0];
+					}
+					for (size_t i = 0;i < count;i++)
+						aCmds[i].AppendFormat(_T("\"%s\""), ExpandFileName(m_pData->m_aFiles[i], sFlags, sExpand));
+					ptr[1] = _T('@');
+				}
+				else if (ptr[1] >= _T('1') && ptr[1] <= _T('9')) {
+					TCHAR ch = ptr[1];
+					ptr[1] = _T('\0');
+					int i = ch - _T('1');
+					if (i <= count - 1)
+						for (size_t n = 0;n < aCmds.GetCount();n++)
+							aCmds[n] += ExpandFileName(m_pData->m_aFiles[i], sFlags, sExpand);
+					ptr[1] = ch;
+				}
+				else if (ptr[1] == _T('w')) {
+					ExpandFileName(sWorkingDir, sFlags, sExpand);
+					for (size_t n = 0;n < aCmds.GetCount();n++)
+						aCmds[n] += sExpand;
+				}
+				else if (ptr[1] == _T('z')) {
+					LPCTSTR str = PathFindFileName((count > 1) ? sWorkingDir : m_pData->m_aFiles[0]);
+					if (str)
+						for (size_t n = 0;n < aCmds.GetCount();n++)
+							aCmds[n] += str;
+				}
+				else if (ptr[1] == _T('c')) {
+					int i = -1;
+					if (ptr[2] >= _T('0') && ptr[2] <= _T('9')) {
+						i = ptr[2] - _T('0');
 						ptr++;
 					}
-					else
-						for (size_t n = 0;n < aCmds.GetCount();n++)
-							aCmds[n] += ptr[0];
-				}
-
-				if (!m_sWorkingDir.IsEmpty()) {
-					if (m_sWorkingDir == _T(".")) {
-						pShellExecuteThread->m_sWorkingDir = pShellExecuteThread->m_aCmds[0];
-						LPTSTR str = pShellExecuteThread->m_sWorkingDir.GetBuffer();
-						PathRemoveArgs(str);
-						PathUnquoteSpaces(str);
-						PathRemoveFileSpec(str);
-						pShellExecuteThread->m_sWorkingDir.ReleaseBuffer();
+					if (!OpenClipboard(NULL))
+						break;
+					HDROP hDrop = (HDROP) GetClipboardData(CF_HDROP);
+					if (hDrop) {
+						TCHAR sFile[KU_MAX_PATH];
+						UINT uCount = DragQueryFile(hDrop, (UINT)-1, NULL, 0);
+						if (i != -1) {
+							if ((UINT) i < uCount && DragQueryFile(hDrop, i, sFile, _countof(sFile)))
+								for (size_t n = 0;n < aCmds.GetCount();n++)
+									aCmds[n] += ExpandFileName(sFile, sFlags, sExpand);
+						}
+						else {
+							for (i = 0;(UINT) i < uCount;i++) {
+								if (DragQueryFile(hDrop, i, sFile, _countof(sFile)))
+									for (size_t n = 0;n < aCmds.GetCount();n++)
+										aCmds[n].AppendFormat(_T("%s\"%s\""), (i == 0 ? _T("") : _T(" ")), ExpandFileName(sFile, sFlags, sExpand));
+							}
+						}
 					}
-					else if (!_tcsncmp(m_sWorkingDir, _T(".\\"), 2) && (m_pKuMenuSet->m_pData->m_iType & CKuShellExtInitData::TypeDirectory))
-						pShellExecuteThread->m_sWorkingDir = m_pKuMenuSet->m_pData->m_aFiles[0] + (m_sWorkingDir.GetString() + 1);
+					CloseClipboard();
+				}
+				else if (ptr[1] >= _T('L') || ptr[1] >= _T('l') || ptr[1] >= _T('u')) {
+					size_t offset = _tcsspn(ptr + 2, _T("0123456789"));
+					int iFrom = 0;
+					if (offset > 0)
+						_stscanf(ptr + 2, _T("%d"), &iFrom);
+					if (m_sTempFile.IsEmpty()) {
+						TCHAR sTempPath[KU_MAX_PATH];
+						if (GetTempPath(_countof(sTempPath), sTempPath)) {
+							if (GetTempFileName(sTempPath, _T("ku."), 0, m_sTempFile.GetBufferSetLength(KU_MAX_PATH))) {
+								m_sTempFile.ReleaseBuffer();
+								HANDLE hFile = CreateFile(m_sTempFile, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_TEMPORARY, NULL);
+								if (hFile != INVALID_HANDLE_VALUE) {
+									BYTE bom[3];
+									DWORD dwWritten;
+									BYTE eol[4];
+
+									switch (ptr[1]) {
+										case _T('L'):
+											bom[0] = 0xFF;
+											bom[1] = 0xFE;
+											*((wchar_t *)eol) = L'\r';
+											*(((wchar_t *)eol) + 1) = L'\n';
+											if (WriteFile(hFile, bom, 2, &dwWritten, NULL)) {
+												for (int i = iFrom;i < count;i++) {
+													ExpandFileName(m_pData->m_aFiles[i], sFlags, sExpand);
+													if (!WriteFile(hFile, (LPCVOID) sExpand.GetString(), sExpand.GetLength() * sizeof(wchar_t), &dwWritten, NULL) ||
+														!WriteFile(hFile, (LPCVOID) eol, 4, &dwWritten, NULL))
+														break;
+												}
+											}
+											break;
+										case _T('l'):
+											eol[0] = '\r';
+											eol[1] = '\n';
+											for (int i = iFrom;i < count;i++) {
+												CStringCharFromWChar sFile(ExpandFileName(m_pData->m_aFiles[i], sFlags, sExpand));
+												if (!WriteFile(hFile, (LPCVOID) sFile.GetString(), sFile.GetLength() * sizeof(char), &dwWritten, NULL) ||
+													!WriteFile(hFile, (LPCVOID) eol, 2, &dwWritten, NULL))
+													break;
+											}
+											break;
+										case _T('u'):
+											bom[0] = 0xEF;
+											bom[1] = 0xBB;
+											bom[2] = 0xBF;
+											eol[0] = '\r';
+											eol[1] = '\n';
+											if (WriteFile(hFile, bom, 3, &dwWritten, NULL)) {
+												for (int i = iFrom;i < count;i++) {
+													CStringUTF8FromWChar sFile(ExpandFileName(m_pData->m_aFiles[i], sFlags, sExpand));
+													if (!WriteFile(hFile, (LPCVOID) sFile.GetString(), sFile.GetLength() * sizeof(char), &dwWritten, NULL) ||
+														!WriteFile(hFile, (LPCVOID) eol, 2, &dwWritten, NULL))
+														break;
+												}
+											}
+											break;
+									}
+									for (size_t n = 0;n < aCmds.GetCount();n++)
+										aCmds[n] += m_sTempFile;
+									CloseHandle(hFile);
+								}
+								else
+									m_sTempFile.Empty();
+							}
+							else
+								m_sTempFile.ReleaseBuffer();
+						}
+					}
+
+					ptr += offset;
+				}
+			}
+			if (ptr[1] == _T('%'))
+				for (size_t n = 0;n < aCmds.GetCount();n++)
+					aCmds[n] += _T('%');
+			ptr++;
+		}
+		else
+			for (size_t n = 0;n < aCmds.GetCount();n++)
+				aCmds[n] += ptr[0];
+	}
+
+	if (!m_d->m_sWorkingDir.IsEmpty()) {
+		if (m_d->m_sWorkingDir == _T(".")) {
+			sWorkingDir = aCmds[0];
+			LPTSTR str = sWorkingDir.GetBuffer();
+			PathRemoveArgs(str);
+			PathUnquoteSpaces(str);
+			PathRemoveFileSpec(str);
+			sWorkingDir.ReleaseBuffer();
+		}
+		else if (!_tcsncmp(m_d->m_sWorkingDir, _T(".\\"), 2) && (m_pData->m_iType & CKuShellExtInitData::TypeDirectory))
+			sWorkingDir = m_pData->m_aFiles[0] + (m_d->m_sWorkingDir.GetString() + 1);
+		else
+			sWorkingDir = m_d->m_sWorkingDir;
+	}
+
+	switch (m_d->m_eAction) {
+		case ACT_EXECUTE:
+			{
+#ifndef _WIN64
+				PVOID oldWow64;
+				if (dll::Wow64DisableWow64FsRedirection)
+					dll::Wow64DisableWow64FsRedirection(&oldWow64);
+#endif
+
+				SHELLEXECUTEINFO shexec = {0};
+				shexec.cbSize = sizeof(SHELLEXECUTEINFO);
+				shexec.fMask = SEE_MASK_NOCLOSEPROCESS | SEE_MASK_FLAG_DDEWAIT | SEE_MASK_UNICODE | (m_d->m_bConsole ? 0 : SEE_MASK_NO_CONSOLE);
+				shexec.nShow = (m_d->m_bConsole ? SW_SHOWNORMAL : SW_HIDE);
+				shexec.lpDirectory = sWorkingDir;
+
+				size_t i, count = aCmds.GetCount();
+				for (i = 0;i < count;i++) {
+					CString sFile;
+					if (m_d->m_bConsole) {
+						sFile = aCmds[i];
+						LPTSTR pFile = sFile.GetBuffer();
+						PathRemoveArgs(pFile);
+						PathUnquoteSpaces(pFile);
+						sFile.ReleaseBuffer();
+						shexec.lpFile = sFile.GetString();
+					}
 					else
-						pShellExecuteThread->m_sWorkingDir = m_sWorkingDir;
+						shexec.lpFile = _T("cmd.exe");
+					shexec.hProcess = 0;
+					if (m_d->m_bConsole)
+						shexec.lpParameters = PathGetArgs(aCmds[i]);
+					else {
+						sFile.Format(_T("/c \"%s\""), aCmds[i].GetString());
+						shexec.lpParameters = sFile;
+					}
+					ShellExecuteEx(&shexec);
+					if (shexec.hProcess) {
+						if (i < count - 1 || !m_sTempFile.IsEmpty()) // don't wait for the last process
+							WaitForSingleObject(shexec.hProcess, INFINITE);
+						CloseHandle(shexec.hProcess);
+					}
 				}
 
-				HANDLE hThread = CreateThread(NULL, 0, ShellExecuteThread, (LPVOID) pShellExecuteThread, 0, NULL);
-				if (hThread)
-					CloseHandle(hThread);
+#ifndef _WIN64
+				if (dll::Wow64RevertWow64FsRedirection)
+					dll::Wow64RevertWow64FsRedirection(oldWow64);
+#endif
 			}
 			break;
 		case ACT_BULITIN:
-			{
-				int argc;
-				LPWSTR *argv;
-				argv = CommandLineToArgvW(m_sAction, &argc);
-				if (argv) {
-					if (argc > 0) {
-						CMD_ID iCmd = GetCmdId(argv[0]);
-						switch (iCmd) {
-							case CMD_ID_DROP_SYMLINKS:
-								if (!dll::CreateSymbolicLinkW) {
-									bResult = false;
-									break;
-								}
-							case CMD_ID_DROP_HARDLINKS:
-							case CMD_ID_DROP_JUNCTIONS:
-								{
-									if (!OpenClipboard(NULL)) {
-										bResult = false;
-										break;
-									}
-									DWORD uFlags = (iCmd == CMD_ID_DROP_SYMLINKS ? DROP_SYMBOLIC : (iCmd == CMD_ID_DROP_JUNCTIONS ? DROP_JUNCTION : DROP_HARDLINK)) |
-										((argc > 1 && !_tcscmp(argv[1], _T("1"))) ? DROP_ABSOLUTE : 0);
-									HDROP hDrop = (HDROP) GetClipboardData(CF_HDROP);
-									if (hDrop) {
-										TCHAR sFile[KU_MAX_PATH];
-										UINT uCount = DragQueryFile(hDrop, (UINT)-1, NULL, 0);
-										for (UINT i = 0;i < uCount;i++) {
-											if (DragQueryFile(hDrop, i, sFile, _countof(sFile)))
-												DropLinks(m_pKuMenuSet->m_pData->m_aFiles[0], sFile, uFlags);
-										}
-									}
-									else {
-										HGLOBAL hText = (HGLOBAL) GetClipboardData(CF_UNICODETEXT);
-										if (hText) {
-											LPCWSTR str = (LPCWSTR) GlobalLock(hText);
-											if (str) {
-												CString sText(str);
-												GlobalUnlock(hText);
-												CString sLine;
+			switch (m_cmdId) {
+				case CMD_ID_DROP_SYMLINKS:
+					if (!dll::CreateSymbolicLinkW) {
+						dwResult = 1;
+						break;
+					}
+				case CMD_ID_DROP_HARDLINKS:
+				case CMD_ID_DROP_JUNCTIONS:
+					{
+						if (!OpenClipboard(NULL)) {
+							dwResult = 1;
+							break;
+						}
+						DWORD uFlags = (m_cmdId == CMD_ID_DROP_SYMLINKS ? DROP_SYMBOLIC : (m_cmdId == CMD_ID_DROP_JUNCTIONS ? DROP_JUNCTION : DROP_HARDLINK)) |
+							((m_iArgc > 1 && !_tcscmp(m_pArgv[1], _T("1"))) ? DROP_ABSOLUTE : 0);
+						HDROP hDrop = (HDROP) GetClipboardData(CF_HDROP);
+						if (hDrop) {
+							TCHAR sFile[KU_MAX_PATH];
+							UINT uCount = DragQueryFile(hDrop, (UINT)-1, NULL, 0);
+							for (UINT i = 0;i < uCount;i++) {
+								if (DragQueryFile(hDrop, i, sFile, _countof(sFile)))
+									DropLinks(m_pData->m_aFiles[0], sFile, uFlags);
+							}
+						}
+						else {
+							HGLOBAL hText = (HGLOBAL) GetClipboardData(CF_UNICODETEXT);
+							if (hText) {
+								LPCWSTR str = (LPCWSTR) GlobalLock(hText);
+								if (str) {
+									CString sText(str);
+									GlobalUnlock(hText);
+									CString sLine;
 
-												int i = 0;
-												while (!(sLine = sText.Tokenize(_T("\t\r\n"), i)).IsEmpty()) {
-													if (PathFileExists(sLine))
-														DropLinks(m_pKuMenuSet->m_pData->m_aFiles[0], sLine, uFlags);
-												}
-											}
-										}
+									int i = 0;
+									while (!(sLine = sText.Tokenize(_T("\t\r\n"), i)).IsEmpty()) {
+										if (PathFileExists(sLine))
+											DropLinks(m_pData->m_aFiles[0], sLine, uFlags);
 									}
-									CloseClipboard();
 								}
-								break;
-							case CMD_ID_RELOAD:
-								ku::cfgFileInfo.nFileSizeLow = ku::cfgFileInfo.nFileSizeHigh = 0; // will reload at the next time
-								break;
+							}
+						}
+						CloseClipboard();
+					}
+					break;
+				case CMD_ID_RENAME:
+					{
+						int n = aCmds.GetCount();
+						int argc;
+						LPWSTR *argv;
+						CString sWD;
+						for (int i = 0;i < n;i++) {
+							argv = CommandLineToArgvW(aCmds[i], &argc);
+							if (argv) {
+								if (argc > 1)
+									MoveFile(m_pData->m_aFiles[i], PathIsRelative(argv[1]) ? sWorkingDir + _T('\\') + argv[1] : argv[1]);
+								LocalFree(argv);
+							}
 						}
 					}
-					LocalFree(argv);
-				}
+					break;
 			}
 			break;
 	}
-
-	return bResult;
-}
-
-DWORD WINAPI CKuMenuSet::CMenuItem::ShellExecuteThread(LPVOID lpParameter)
-{
-	if (!lpParameter)
-		return 1;
-	CShellExecuteThread *pShellExecuteThread = (CShellExecuteThread *) lpParameter;
-	CAtlArray<CString> &aCmds = pShellExecuteThread->m_aCmds;
-
-#ifndef _WIN64
-	PVOID oldWow64;
-	if (dll::Wow64DisableWow64FsRedirection)
-		dll::Wow64DisableWow64FsRedirection(&oldWow64);
-#endif
-
-	SHELLEXECUTEINFO shexec = {0};
-	shexec.cbSize = sizeof(SHELLEXECUTEINFO);
-	shexec.fMask = SEE_MASK_NOCLOSEPROCESS | SEE_MASK_FLAG_DDEWAIT | SEE_MASK_UNICODE | (pShellExecuteThread->m_bConsole ? 0 : SEE_MASK_NO_CONSOLE);
-	shexec.nShow = (pShellExecuteThread->m_bConsole ? SW_SHOWNORMAL : SW_HIDE);
-	shexec.lpDirectory = pShellExecuteThread->m_sWorkingDir;
-
-	size_t i, count = aCmds.GetCount();
-	for (i = 0;i < count;i++) {
-		TRACE(_T("aCmds[%d]=%s\n"), i, aCmds[i].GetString());
-		CString sFile;
-		if (pShellExecuteThread->m_bConsole) {
-			sFile = aCmds[i];
-			LPTSTR pFile = sFile.GetBuffer();
-			PathRemoveArgs(pFile);
-			PathUnquoteSpaces(pFile);
-			sFile.ReleaseBuffer();
-			shexec.lpFile = sFile.GetString();
-		}
-		else
-			shexec.lpFile = _T("cmd.exe");
-		shexec.hProcess = 0;
-		if (pShellExecuteThread->m_bConsole)
-			shexec.lpParameters = PathGetArgs(aCmds[i]);
-		else {
-			sFile.Format(_T("/c \"%s\""), aCmds[i].GetString());
-			shexec.lpParameters = sFile;
-		}
-		ShellExecuteEx(&shexec);
-		if (shexec.hProcess) {
-			if (i < count - 1 || !pShellExecuteThread->m_sTempFile.IsEmpty()) // don't wait for the last process
-				WaitForSingleObject(shexec.hProcess, INFINITE);
-			CloseHandle(shexec.hProcess);
-		}
-	}
-
-#ifndef _WIN64
-	if (dll::Wow64RevertWow64FsRedirection)
-		dll::Wow64RevertWow64FsRedirection(oldWow64);
-#endif
-
-	delete pShellExecuteThread;
-	return 0;
+	return dwResult;
 }
 
 inline bool IsAcpCompatible(LPCWSTR str)
