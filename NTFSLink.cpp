@@ -17,11 +17,10 @@ BOOL WINAPI GetReparsePointTarget(LPCWSTR sLinkPath, LPWSTR sTarget, DWORD cch)
 	DWORD len;
 	BOOL ret = TRUE;
 
-	pBuffer = (PREPARSE_DATA_BUFFER) buf;
-
 	if ((hFile = OpenJunctionPointFile(sLinkPath, GENERIC_READ)) == INVALID_HANDLE_VALUE)
 		return FALSE;
 
+	pBuffer = (PREPARSE_DATA_BUFFER) buf;
 	if (!DeviceIoControl(hFile, FSCTL_GET_REPARSE_POINT, NULL, 0, pBuffer, REPARSE_DATA_BUFFER_HEADER_SIZE + MAXIMUM_REPARSE_DATA_BUFFER_SIZE, &len, NULL))
 		RETURN(FALSE);
 
@@ -51,7 +50,7 @@ FINALIZE:
 	return ret;
 }
 
-static const size_t MOUNT_POINT_PATH_OFFSET = offsetof(REPARSE_DATA_BUFFER, MountPointReparseBuffer.PathBuffer);
+#define MOUNT_POINT_PATH_OFFSET offsetof(REPARSE_DATA_BUFFER, MountPointReparseBuffer.PathBuffer)
 BOOL WINAPI CreateJunctionPoint(LPCWSTR sLinkPath, LPCWSTR sTarget)
 {
 	HANDLE hFile;
@@ -108,17 +107,28 @@ BOOL WINAPI DeleteReparsePointFile(LPCWSTR sLinkPath)
 	HANDLE hFile;
 	REPARSE_GUID_DATA_BUFFER rgdb = {0};
 	DWORD len;
+	char buf[REPARSE_DATA_BUFFER_HEADER_SIZE + MAXIMUM_REPARSE_DATA_BUFFER_SIZE];
+	PREPARSE_DATA_BUFFER pBuffer;
+	BOOL ret = TRUE;
 
-	if ((hFile = OpenJunctionPointFile(sLinkPath, GENERIC_WRITE)) == INVALID_HANDLE_VALUE)
+	if ((hFile = OpenJunctionPointFile(sLinkPath, GENERIC_READ | GENERIC_WRITE)) == INVALID_HANDLE_VALUE)
 		return FALSE;
 
-	rgdb.ReparseTag = IO_REPARSE_TAG_MOUNT_POINT;
-	if (!DeviceIoControl(hFile, FSCTL_DELETE_REPARSE_POINT, &rgdb, REPARSE_GUID_DATA_BUFFER_HEADER_SIZE, NULL, 0, &len, NULL)) {
-		CloseHandle(hFile);
-		return FALSE;
-	}
+	// Get reparse tag.
+	pBuffer = (PREPARSE_DATA_BUFFER) buf;
+	if (!DeviceIoControl(hFile, FSCTL_GET_REPARSE_POINT, NULL, 0, pBuffer, REPARSE_DATA_BUFFER_HEADER_SIZE + MAXIMUM_REPARSE_DATA_BUFFER_SIZE, &len, NULL))
+		RETURN(FALSE);
+
+	// MSDN: If you are modifying, getting, or deleting a reparse point,
+	// you must specify the same reparse tag in the operation that is contained in the file.
+	// Otherwise, the operation will fail with the error ERROR_REPARSE_TAG_MISMATCH.
+	rgdb.ReparseTag = pBuffer->ReparseTag;
+	if (!DeviceIoControl(hFile, FSCTL_DELETE_REPARSE_POINT, &rgdb, REPARSE_GUID_DATA_BUFFER_HEADER_SIZE, NULL, 0, &len, NULL))
+		RETURN(FALSE);
 
 	CloseHandle(hFile);
-
 	return RemoveDirectory(sLinkPath) || DeleteFile(sLinkPath);
+FINALIZE:
+	CloseHandle(hFile);
+	return ret;
 }
