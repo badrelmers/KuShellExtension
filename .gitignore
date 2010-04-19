@@ -1,5 +1,7 @@
 *.suo
 *.ncb
+*.sdf
+*.opensdf
 *.aps
 *.user
 *.lib
@@ -12,6 +14,7 @@
 Release*/
 Debug*/
 x64/
+ipch/
 
 .hg/
 .svn/

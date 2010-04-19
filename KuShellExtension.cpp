@@ -146,7 +146,7 @@ EXTERN_C BOOL APIENTRY DllMain( HMODULE hModule,
 		case DLL_PROCESS_ATTACH:
 			{
 #ifdef _MSC_VER
-				_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF); //detect memory leaks
+				_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF); // detect memory leaks
 #endif
 				GetModuleFileName(NULL, ku::sModulePath.GetBufferSetLength(KU_MAX_PATH), KU_MAX_PATH);
 				ku::sModulePath.ReleaseBuffer();
@@ -193,7 +193,7 @@ STDAPI DllRegisterServer()
 		SHSetValue(HKEY_CURRENT_USER, _T("Software\\Classes\\CLSID\\") + g_sCLSID + _T("\\InProcServer32"), _T("ThreadingModel"), REG_SZ, (LPCVOID) _T("Apartment"), sizeof(_T("Apartment"))) != ERROR_SUCCESS)
 		return SELFREG_E_CLASS;
 
-	// Require admininstrator's rights!
+	// Require administrator's rights!
 	SHSetValue(HKEY_LOCAL_MACHINE, _T("Software\\Microsoft\\Windows\\CurrentVersion\\Shell Extensions\\Approved"), g_sCLSID, REG_SZ, (LPCVOID) g_sName.GetString(), dwNameCcb);
 
 	SHChangeNotify(SHCNE_ASSOCCHANGED, SHCNF_IDLIST, NULL, NULL);
@@ -214,7 +214,7 @@ STDAPI DllUnregisterServer()
 		SHDeleteKey(HKEY_CURRENT_USER, _T("Software\\Classes\\CLSID\\") + g_sCLSID) != ERROR_SUCCESS)
 		return SELFREG_E_CLASS;
 
-	// Require admininstrator's rights!
+	// Require administrator's rights!
 	SHDeleteValue(HKEY_LOCAL_MACHINE, _T("Software\\Microsoft\\Windows\\CurrentVersion\\Shell Extensions\\Approved"), g_sCLSID);
 
 	SHChangeNotify(SHCNE_ASSOCCHANGED, SHCNF_IDLIST, NULL, NULL);
