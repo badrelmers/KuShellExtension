@@ -237,7 +237,7 @@ STDAPI DllGetClassObject(REFCLSID rclsid, REFIID riid, LPVOID * ppv)
         return CLASS_E_CLASSNOTAVAILABLE;
 
     if (pObj) {
-        if(SUCCEEDED(pObj->QueryInterface(riid, ppv)))
+        if (SUCCEEDED(pObj->QueryInterface(riid, ppv)))
             // Release extra refcount from QueryInterface
 			pObj->Release();
         else {

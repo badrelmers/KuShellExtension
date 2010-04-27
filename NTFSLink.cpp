@@ -1,7 +1,7 @@
 #include "stdafx.h"
 #include "NTFSLink.h"
 
-#define RETURN(r) { ret = (r); goto FINALIZE; }
+#define RETURN(r) do { ret = (r); goto FINALIZE; } while(0)
 
 __inline
 HANDLE OpenJunctionPointFile(LPCTSTR sFile, DWORD dwDesiredAccess)
@@ -73,7 +73,7 @@ BOOL WINAPI CreateJunctionPoint(LPCWSTR sLinkPath, LPCWSTR sTarget)
 	else {
 		wcscpy(pBuffer->MountPointReparseBuffer.PathBuffer, L"\\??\\");
 		if (!GetFullPathName(sTarget, 32767 - 4, pBuffer->MountPointReparseBuffer.PathBuffer + 4, NULL))
-			return FALSE;
+			RETURN(FALSE);
 	}
 
 	len = wcslen(pBuffer->MountPointReparseBuffer.PathBuffer) * sizeof(WCHAR);
@@ -88,17 +88,16 @@ BOOL WINAPI CreateJunctionPoint(LPCWSTR sLinkPath, LPCWSTR sTarget)
 	// + sizeof(WCHAR) * 2 for the '\0's of SubstituteName and PrintName
 	pBuffer->ReparseDataLength = len + sizeof(WCHAR) * 2 + MOUNT_POINT_PATH_OFFSET - REPARSE_DATA_BUFFER_HEADER_SIZE;
 
-	if ((hFile = OpenJunctionPointFile(sLinkPath, GENERIC_WRITE)) == INVALID_HANDLE_VALUE) {
-		RemoveDirectory(sLinkPath);
-		return FALSE;
-	}
+	if ((hFile = OpenJunctionPointFile(sLinkPath, GENERIC_WRITE)) == INVALID_HANDLE_VALUE)
+		RETURN(FALSE);
 
-	if (!DeviceIoControl(hFile, FSCTL_SET_REPARSE_POINT, pBuffer, pBuffer->ReparseDataLength + REPARSE_DATA_BUFFER_HEADER_SIZE, NULL, 0, &len, NULL)) {
-		RemoveDirectory(sLinkPath);
+	if (!DeviceIoControl(hFile, FSCTL_SET_REPARSE_POINT, pBuffer, pBuffer->ReparseDataLength + REPARSE_DATA_BUFFER_HEADER_SIZE, NULL, 0, &len, NULL))
 		ret = FALSE;
-	}
 
 	CloseHandle(hFile);
+FINALIZE:
+	if (!ret)
+		RemoveDirectory(sLinkPath);
 	return ret;
 }
 
