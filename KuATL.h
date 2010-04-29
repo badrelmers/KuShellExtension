@@ -84,6 +84,11 @@ public:
 		baseT::push_back(element);
 		return GetCount() - 1;
 	}
+
+	bool IsEmpty() const
+	{
+		return baseT::empty();
+	}
 };
 
 #ifndef __ATLCOLL_H__

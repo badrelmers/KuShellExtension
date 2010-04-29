@@ -80,6 +80,11 @@ STDMETHODIMP CKuShellExtInit::Initialize(
 
             ReleaseStgMedium(&medium);
         }
+		else
+			return E_UNEXPECTED;
+
+		if (m_pData->m_aFiles.IsEmpty() || m_pData->m_aFiles[0].IsEmpty())
+			return E_UNEXPECTED;
 
 		m_pData->m_bFromFolderBk = false;
 		if (PathIsDirectory(m_pData->m_aFiles[0]))
@@ -91,10 +96,8 @@ STDMETHODIMP CKuShellExtInit::Initialize(
 		m_pData->m_aFiles[0].ReleaseBuffer();
 
 		// In some cases this can happen.
-		if (m_pData->m_aFiles[0].IsEmpty()) {
-			m_pData->m_aFiles.RemoveAll();
+		if (m_pData->m_aFiles[0].IsEmpty())
 			return E_UNEXPECTED;
-		}
 
 		m_pData->m_bFromFolderBk = true;
 		m_pData->m_iType = CKuShellExtInitData::TypeDirectory;
