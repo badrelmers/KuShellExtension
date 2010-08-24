@@ -350,7 +350,7 @@ void CKuMenuSet::PraseMenuItems(pug::xml_node &node, CMenuItem *pItem)
 			for (n = 0;n < count;n++)
 				LocalFree(vars[n].argv);
 		}
-	} while(node.moveto_next_sibling());
+	} while (node.moveto_next_sibling());
 }
 
 typedef enum {
@@ -430,7 +430,7 @@ LPCTSTR CKuMenuSet::Substitute(LPCTSTR src, CString &dest, CMenuItem *pItem)
 								dest += _T('"');
 							else if (var[0] == _T('#')) { 
 								if (var[1] == _T('x'))
-									dest += (wchar_t)  _tcstoul(var.GetString() + 2, NULL, 16);
+									dest += (wchar_t) _tcstoul(var.GetString() + 2, NULL, 16);
 								else
 									dest += (wchar_t) _tcstoul(var.GetString() + 1, NULL, 10);
 							}
@@ -706,7 +706,7 @@ bool WildMatchPath(CString sPath, CString sWild)
 		if (!WildMatch(sPathTok, sWildTok))
 			return false;
 	}
-	return true;
+	return sWild.Tokenize(_T("\\/"), iWildStart).IsEmpty();
 }
 
 // "*": files

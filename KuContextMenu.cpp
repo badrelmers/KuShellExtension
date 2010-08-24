@@ -108,7 +108,7 @@ STDMETHODIMP CKuContextMenu::InvokeCommand(
 
 	// pici->lpVerb == 0 or pici->lpVerbW == 0 are invalid because we offer IDs from offset 1
 	UINT id;
-	if(pici->lpVerb && !HIWORD(pici->lpVerb)) // it seems lpVerb is more reliable than lpVerbW
+	if (pici->lpVerb && !HIWORD(pici->lpVerb)) // it seems lpVerb is more reliable than lpVerbW
 		id = LOWORD(pici->lpVerb);
 	else if (bUnicode && piciex->lpVerbW && !HIWORD(piciex->lpVerbW))
 		id = LOWORD(piciex->lpVerbW);
