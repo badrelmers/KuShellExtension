@@ -59,11 +59,12 @@ public:
 	{
 		IMPLEMENT_REFCOUNT()
 	public:
-		CMenuItemData() : m_eAction(ACT_EXECUTE), m_bConsole(true) {}
+		CMenuItemData() : m_eAction(ACT_EXECUTE), m_bConsole(true), m_iWindowSize(SW_SHOWNORMAL) {}
 		ACTION m_eAction;
 		CString m_sAction;
 		CString m_sWorkingDir;
 		bool m_bConsole;
+		int m_iWindowSize;
 	};
 
 	class CMenuItem

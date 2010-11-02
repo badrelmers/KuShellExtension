@@ -224,6 +224,9 @@ void CKuMenuSet::PraseMenuItems(pug::xml_node &node, CMenuItem *pItem)
 				}
 				Substitute(node.attribute(_T("console")).value(), str, pItem);
 				pItem->m_d->m_bConsole = !!str.CompareNoCase(_T("false"));
+				Substitute(node.attribute(_T("windowsize")).value(), str, pItem);
+				if (!str.IsEmpty())
+					pItem->m_d->m_iWindowSize = _ttoi(str);
 				Substitute(node.attribute(_T("workdir")).value(), pItem->m_d->m_sWorkingDir, pItem);
 			}
 			if (!sIcon.IsEmpty()) {
@@ -530,13 +533,32 @@ void CKuMenuSet::InitBuiltinVars()
 	m_BuiltinVars.SetAt(_T("KU_SHELL_EXTENSION_DIR"), ku::sModuleDir);
 	m_BuiltinVars.SetAt(_T("KU_SHELL_EXTENSION_DRIVE"), ku::sModulePath.Left(2));
 
+	#define SW_SETVAR(n) do { \
+		CString s; \
+		s.Format(_T("%d"), n); \
+		m_BuiltinVars.SetAt(_T(#n), s); \
+	} while (0)
+
+	SW_SETVAR(SW_HIDE);
+	SW_SETVAR(SW_MAXIMIZE);
+	SW_SETVAR(SW_MINIMIZE);
+	SW_SETVAR(SW_RESTORE);
+	SW_SETVAR(SW_SHOW);
+	SW_SETVAR(SW_SHOWDEFAULT);
+	SW_SETVAR(SW_SHOWMAXIMIZED);
+	SW_SETVAR(SW_SHOWMINNOACTIVE);
+	SW_SETVAR(SW_SHOWNA);
+	SW_SETVAR(SW_SHOWNOACTIVATE);
+	SW_SETVAR(SW_SHOWNORMAL);
+
 	if (dll::SHGetKnownFolderPath) {
 		PWSTR sOut = NULL;
 
-		#define FOLDERID_SETVAR(id, name) \
+		#define FOLDERID_SETVAR(id, name) do { \
 			if (sOut) { CoTaskMemFree(sOut); sOut = NULL; } \
 			if (dll::SHGetKnownFolderPath(&(id), KF_FLAG_DONT_VERIFY, NULL, &sOut) == S_OK) \
-				m_BuiltinVars.SetAt((name), sOut);
+				m_BuiltinVars.SetAt((name), sOut); \
+		} while (0)
 
 		FOLDERID_SETVAR(FOLDERID_Documents, _T("Documents"));
 		FOLDERID_SETVAR(FOLDERID_PublicDocuments, _T("CommonDocuments"));
@@ -600,9 +622,10 @@ void CKuMenuSet::InitBuiltinVars()
 		prog.GetEnvironmentVariable(_T("ProgramFiles"));
 		m_BuiltinVars.SetAt(_T("ProgramFiles"), prog);
 
-		#define CSIDL_SETVAR(id, name) \
+		#define CSIDL_SETVAR(id, name) do { \
 			if (SHGetSpecialFolderPath(NULL, sys.GetBufferSetLength(KU_MAX_PATH), (id), FALSE)) \
-			{ sys.ReleaseBuffer(); m_BuiltinVars.SetAt((name), sys); } else sys.ReleaseBuffer();
+			{ sys.ReleaseBuffer(); m_BuiltinVars.SetAt((name), sys); } else sys.ReleaseBuffer(); \
+		} while (0)
 
 		CSIDL_SETVAR(CSIDL_MYDOCUMENTS, _T("Documents"));
 		CSIDL_SETVAR(CSIDL_COMMON_DOCUMENTS, _T("CommonDocuments"));
@@ -1168,7 +1191,7 @@ DWORD CKuMenuSet::CMenuItem::CInvokeCommandThread::ThreadProc()
 				SHELLEXECUTEINFO shexec = {0};
 				shexec.cbSize = sizeof(SHELLEXECUTEINFO);
 				shexec.fMask = SEE_MASK_NOCLOSEPROCESS | SEE_MASK_FLAG_DDEWAIT | SEE_MASK_UNICODE | (m_d->m_bConsole ? 0 : SEE_MASK_NO_CONSOLE);
-				shexec.nShow = (m_d->m_bConsole ? SW_SHOWNORMAL : SW_HIDE);
+				shexec.nShow = (m_d->m_bConsole ? m_d->m_iWindowSize : SW_HIDE);
 				shexec.lpDirectory = sWorkingDir;
 
 				size_t i, count = aCmds.GetCount();
