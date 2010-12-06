@@ -42,11 +42,15 @@ CAtlMap<CString, CString> CKuMenuSet::m_BuiltinVars;
 
 CKuMenuSet::CKuMenuSet()
 	: m_pFirstItem(NULL)
+	, m_bHideMissing(false)
+	, m_bDeferredIO(false)
+	, m_hDeferredIOThread(NULL)
 {
 }
 
 CKuMenuSet::~CKuMenuSet()
 {
+	StopDeferredIOThread();
 	if (m_pFirstItem)
 		delete m_pFirstItem;
 }
@@ -58,7 +62,9 @@ bool CKuMenuSet::FromFile(LPCTSTR sPath)
 	HANDLE hFile;
 	if ((hFile = CreateFile(sPath, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, NULL)) == INVALID_HANDLE_VALUE)
 		return false;
-	return FromFile(hFile);
+	bool ret = FromFile(hFile);
+	CloseHandle(hFile);
+	return ret;
 }
 
 bool CKuMenuSet::FromFile(HANDLE hFile)
@@ -67,17 +73,18 @@ bool CKuMenuSet::FromFile(HANDLE hFile)
 
 	LARGE_INTEGER uSize;
 	bool ret = false;
-	if (GetFileSizeEx(hFile, &uSize) != INVALID_FILE_SIZE && uSize.LowPart > 0 && uSize.HighPart == 0) { // > 4GB configure file is not supported
-		DWORD uRead;
-		BYTE *buffer;
-		buffer = (BYTE *) malloc(uSize.LowPart + sizeof(TCHAR));
-		memset(buffer + uSize.LowPart, 0, sizeof(TCHAR));
-		if (ReadFile(hFile, (LPVOID) buffer, uSize.LowPart, &uRead, NULL))
+	// > 4GB configure file is not supported
+	if (GetFileSizeEx(hFile, &uSize) != INVALID_FILE_SIZE && uSize.LowPart > 0 && uSize.HighPart == 0) {
+		HANDLE hMap = CreateFileMapping(hFile, NULL, PAGE_READONLY, 0, 0, NULL);
+		if (!hMap)
+			return false;
+		const BYTE *buffer = (const BYTE *) MapViewOfFile(hMap, FILE_MAP_READ, 0, 0, 0);
+		if (buffer) {
 			ret = !!FromRaw(buffer, uSize.LowPart);
-		free(buffer);
+			UnmapViewOfFile(buffer);
+		}
+		CloseHandle(hMap);
 	}
-
-	CloseHandle(hFile);
 	return ret;
 }
 
@@ -86,9 +93,9 @@ bool CKuMenuSet::FromRaw(const BYTE *pXML, DWORD uLen)
 #ifdef _UNICODE
 	switch (DetectCodePage(pXML, uLen)) {
 		case CP_UTF8:
-			return FromString(CStringWCharFromUTF8((LPCSTR) pXML));
+			return FromString(CStringWCharFromUTF8((LPCSTR) pXML, uLen));
 		case 1200: // UTF-16LE
-			return FromString((LPCTSTR) pXML);
+			return FromString((LPCTSTR) pXML); // XXX: pXML may not zero-terminated
 	}
 #endif
 	return false;
@@ -119,17 +126,59 @@ bool CKuMenuSet::FromString(LPCTSTR sXML)
 		delete m_pFirstItem;
 	m_pFirstItem = new CMenuItem(this);
 
+	StopDeferredIOThread();
+	m_bNoMoreJobs = false;
+	m_iJobs = 0;
+	m_hDeferredIOThread = CreateThread(NULL, 0, DeferredIOThread, this, CREATE_SUSPENDED, NULL);
+	SetThreadPriority(m_hDeferredIOThread, THREAD_PRIORITY_BELOW_NORMAL);
+	ResumeThread(m_hDeferredIOThread);
+
 	pug::xml_node node = doc;
 	node.moveto_child((unsigned int) 0);
 
 	if (dll::GdiplusStartup && !ku::gdiplusToken)
 		dll::GdiplusStartup(&ku::gdiplusToken, &ku::gdiplusStartupInput, NULL);
 	PraseMenuItems(node, m_pFirstItem);
+	m_bNoMoreJobs = true;
 
 	return true;
 #else
 	#error Always keep Unicode in mind!!!
 #endif
+}
+
+void CKuMenuSet::DeferredIOThread()
+{
+	LONG n, i = 0;
+	CMenuItem *pItem;
+	BOOL bExists;
+	while (1) {
+		n = InterlockedExchange(&m_iJobs, m_iJobs);
+		if (n < 0) // Main thread set m_iJobs to -1 when it want to abort this thread
+			break;
+		if (i >= n) {
+			if (m_bNoMoreJobs && i >= InterlockedExchange(&m_iJobs, m_iJobs))
+				break;
+			Sleep(50);
+			continue;
+		}
+		pItem = m_aJobs[i++];
+		if (!pItem->m_sPathToTest.IsEmpty()) {
+			bExists = PathFileExists(pItem->m_sPathToTest);
+			pItem->m_sPathToTest.Empty();
+			if (bExists)
+				pItem->m_eExistence = CMenuItem::PATH_EXISTS;
+			else {
+				pItem->m_eExistence = CMenuItem::PATH_DOES_NOT_EXISTS;
+				pItem->m_sIconFile.Empty();
+				continue;
+			}
+		}
+		if (!pItem->m_sIconFile.IsEmpty()) {
+			pItem->LoadIcon(pItem->m_sIconFile, pItem->m_iIconIndex);
+			pItem->m_sIconFile.Empty();
+		}
+	}
 }
 
 struct ARGS {
@@ -142,6 +191,9 @@ void CKuMenuSet::PraseMenuItems(pug::xml_node &node, CMenuItem *pItem)
 {
 	ASSERT(pItem);
 	do {
+		if (m_iJobs >= MAX_MENU_ITEM)
+			return;
+
 		if (!_tcsicmp(node.name(), _T("var"))) {
 #ifdef _MSC_VER
 			pug::xml_attribute&
@@ -160,7 +212,11 @@ void CKuMenuSet::PraseMenuItems(pug::xml_node &node, CMenuItem *pItem)
 				pItem->m_pParent->m_vars.SetAt(Substitute(name, str, pItem), value);
 			else
 				m_vars.SetAt(Substitute(name, str, pItem), value);
-			TRACE(_T("%s=%s\n"), Substitute(name, str, pItem), value.GetString());
+
+			if (!_tcscmp(name, _T("HIDE_MISSING")))
+				m_bHideMissing = ToBoolean(value);
+			else if (!_tcscmp(name, _T("DEFERRED_IO")))
+				m_bDeferredIO = ToBoolean(value);
 		}
 		else if (!_tcsicmp(node.name(), _T("menu")) || !_tcsicmp(node.name(), _T("menuitem"))) {
 			CString sIcon;
@@ -202,8 +258,7 @@ void CKuMenuSet::PraseMenuItems(pug::xml_node &node, CMenuItem *pItem)
 						}
 					}
 				}
-				bool bHideMissing = GetBoolean(_T("HIDE_MISSING"));
-				if ((sIcon.IsEmpty() || bHideMissing) && pItem->m_d->m_eAction == ACT_EXECUTE) {
+				if ((sIcon.IsEmpty() || m_bHideMissing) && pItem->m_d->m_eAction == ACT_EXECUTE) {
 					CString sProg = pItem->m_d->m_sAction;
 					LPTSTR pIcon = sProg.GetBuffer();
 					PathRemoveArgs(pIcon);
@@ -211,13 +266,17 @@ void CKuMenuSet::PraseMenuItems(pug::xml_node &node, CMenuItem *pItem)
 					sProg.ReleaseBuffer();
 					// drop the entries which use the missing programs.
 					// we should check the file existence here, because checking them on-the-fly may be very slow.
-					if (bHideMissing && !PathFileExists(sProg)) {
-						pItem->m_sName.Empty();
-						pItem->m_sClasses.Empty();
-						pItem->m_d->m_eAction = ACT_EXECUTE;
-						pItem->m_d->m_bConsole = false;
-						pItem->m_dwMultiItems = 1;
-						continue;
+					if (m_bHideMissing) {
+						if (m_bDeferredIO)
+							pItem->m_sPathToTest = sProg;
+						else if (!PathFileExists(sProg)) {
+							pItem->m_sName.Empty();
+							pItem->m_sClasses.Empty();
+							pItem->m_d->m_eAction = ACT_EXECUTE;
+							pItem->m_d->m_bConsole = false;
+							pItem->m_dwMultiItems = 1;
+							continue;
+						}
 					}	
 					if (sIcon.IsEmpty())
 						sIcon = sProg;
@@ -237,37 +296,12 @@ void CKuMenuSet::PraseMenuItems(pug::xml_node &node, CMenuItem *pItem)
 					*ptr++ = 0;
 					i = _ttoi(ptr);
 				}
-#ifndef _WIN64
-				PVOID oldWow64;
-				if (dll::Wow64DisableWow64FsRedirection)
-					dll::Wow64DisableWow64FsRedirection(&oldWow64);
-#endif
-				if (PathFileExists(pIcon)) {
-					LPCTSTR sExt = _tcsrchr(pIcon, _T('.'));
-					if (!sExt)
-						sExt = _T("");
-					else
-						sExt++;
-					if (!_tcsicmp(sExt, _T("png")) || !_tcsicmp(sExt, _T("gif")) || !_tcsicmp(sExt, _T("bmp")) ||
-						!_tcsicmp(sExt, _T("jpg")) || !_tcsicmp(sExt, _T("tif")))
-					{
-						Gdiplus::GpBitmap *pBitmap = NULL;
-						if (dll::GdipCreateBitmapFromFile(pIcon, &pBitmap) == Gdiplus::Ok) {
-							dll::GdipCreateHICONFromBitmap(pBitmap, &pItem->m_hIcon);
-							dll::GdipCreateHBITMAPFromBitmap(pBitmap, &pItem->m_hBitmap, Gdiplus::Color::Transparent);
-						}
-					}
-					else {
-						ExtractIconEx(pIcon, i, NULL, &pItem->m_hIcon, 1);
-						if (pItem->m_hIcon && ku::SysVer.m_vMajor >= 6)
-							pItem->m_hBitmap = CKuContextMenu::IconToBitmap(pItem->m_hIcon);
-					}
+				if (m_bDeferredIO) {
+					pItem->m_sIconFile = pIcon;
+					pItem->m_iIconIndex = i;
 				}
-#ifndef _WIN64
-				if (dll::Wow64RevertWow64FsRedirection)
-					dll::Wow64RevertWow64FsRedirection(oldWow64);
-#endif
-
+				else
+					pItem->LoadIcon(pIcon, i);
 				sIcon.ReleaseBuffer();
 			}
 			if (!_tcsicmp(node.name(), _T("menu")) && node.children() > 0) {
@@ -280,6 +314,11 @@ void CKuMenuSet::PraseMenuItems(pug::xml_node &node, CMenuItem *pItem)
 				PraseMenuItems(child, pItem->m_pFirstChild);
 #endif
 			}
+			if (m_bDeferredIO) {
+				m_aJobs[m_iJobs] = pItem;
+				InterlockedIncrement(&m_iJobs);
+			}
+
 			// this waste some spaces, since the last node in each group is not used.
 			pItem->m_pNextSibling = new CMenuItem(this);
 			pItem->m_pNextSibling->m_pPrevSibling = pItem;
@@ -472,7 +511,7 @@ bool CKuMenuSet::GetVariable(LPCTSTR key, CString &value, CMenuItem *pItem/* = N
 bool CKuMenuSet::GetBoolean(LPCTSTR key, bool bDefault/* = false*/, CMenuItem *pItem/* = NULL*/)
 {
 	CString sValue;
-	return GetOurVariable(key, sValue) ? (!_tcscmp(sValue, _T("1")) || !_tcsicmp(sValue, _T("true"))) : bDefault;
+	return GetOurVariable(key, sValue) ? ToBoolean(sValue) : bDefault;
 }
 
 bool CKuMenuSet::IsNumber(LPCTSTR str)
@@ -837,7 +876,7 @@ CKuMenuSet::CMD_ID CKuMenuSet::CMenuItem::GetCmdId(LPCTSTR sCmd)
 
 bool CKuMenuSet::CMenuItem::ShouldShown()
 {
-	if (m_sName.IsEmpty())
+	if (m_sName.IsEmpty() || m_eExistence == PATH_DOES_NOT_EXISTS)
 		return false;
 	if (GetKeyState(VK_CONTROL) & 0x8000)
 		return true;
@@ -1495,4 +1534,46 @@ bool CKuMenuSet::CMenuItem::DropLinks(LPCTSTR sDir, LPCTSTR sPath, DWORD uFlags)
 		return !!CreateHardLink(sLink, sTarget, NULL);
 
 	return false;
+}
+
+void CKuMenuSet::CMenuItem::LoadIcon(LPCTSTR sFile, int iIndex)
+{
+#ifndef _WIN64
+	PVOID oldWow64;
+	if (dll::Wow64DisableWow64FsRedirection)
+		dll::Wow64DisableWow64FsRedirection(&oldWow64);
+#endif
+	if (PathFileExists(sFile)) {
+		LPCTSTR sExt = _tcsrchr(sFile, _T('.'));
+		HICON hIcon;
+		HBITMAP hBitmap;
+		if (!sExt)
+			sExt = _T("");
+		else
+			sExt++;
+		if (!_tcsicmp(sExt, _T("png")) || !_tcsicmp(sExt, _T("gif")) || !_tcsicmp(sExt, _T("bmp")) ||
+			!_tcsicmp(sExt, _T("jpg")) || !_tcsicmp(sExt, _T("tif")))
+		{
+			Gdiplus::GpBitmap *pBitmap = NULL;
+			if (dll::GdipCreateBitmapFromFile(sFile, &pBitmap) == Gdiplus::Ok) {
+				dll::GdipCreateHICONFromBitmap(pBitmap, &hIcon);
+				dll::GdipCreateHBITMAPFromBitmap(pBitmap, &hBitmap, Gdiplus::Color::Transparent);
+			}
+		}
+		else {
+			ExtractIconEx(sFile, iIndex, NULL, &hIcon, 1);
+			if (hIcon && ku::SysVer.m_vMajor >= 6)
+				hBitmap = CKuContextMenu::IconToBitmap(hIcon);
+		}
+
+		// XXX: This method may be called in a worker thread.
+		// There is no locking around for performance concerns, but it might cause problems.
+		// Let's fix it if the something went wrong in the future.
+		m_hIcon = hIcon;
+		m_hBitmap = hBitmap;
+	}
+#ifndef _WIN64
+	if (dll::Wow64RevertWow64FsRedirection)
+		dll::Wow64RevertWow64FsRedirection(oldWow64);
+#endif
 }

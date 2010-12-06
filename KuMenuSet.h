@@ -54,6 +54,9 @@ public:
 		, CMD_ID_RELOAD
 		, CMD_ID_RENAME
 	};
+	enum {
+		MAX_MENU_ITEM = 4096
+	};
 
 	class CMenuItemData
 	{
@@ -77,8 +80,9 @@ public:
 		static CMD_ID GetCmdId(LPCTSTR sCmd);
 
 		explicit CMenuItem(CKuMenuSet *pKuMenuSet)
-			: m_pParent(NULL), m_pPrevSibling(NULL), m_pNextSibling(NULL), m_pFirstChild(NULL),
-			 m_hIcon(NULL), m_dwMultiItems(1), m_pKuMenuSet(pKuMenuSet), m_hBitmap(NULL), m_d(new CMenuItemData)
+			: m_pParent(NULL), m_pPrevSibling(NULL), m_pNextSibling(NULL), m_pFirstChild(NULL)
+			, m_hIcon(NULL), m_dwMultiItems(1), m_pKuMenuSet(pKuMenuSet), m_hBitmap(NULL), m_d(new CMenuItemData)
+			, m_iIconIndex(0), m_eExistence(PATH_UNKNOWN)
 		{ ASSERT(m_pKuMenuSet); }
 		virtual ~CMenuItem()
 		{
@@ -97,6 +101,8 @@ public:
 		bool IsOurPath(LPCTSTR sPath, int iType);
 		static bool IsOurPath(LPCTSTR sPath, int iType, LPWSTR *pClasses, int iClassesCount);
 		bool ShouldShown();
+
+		void LoadIcon(LPCTSTR sFile, int iIndex);
 
 		void QueryContextMenu(HMENU hMenu, UINT &indexMenu, UINT &idCmdFirst, UINT idCmdLast, UINT uFlags);
 		bool InvokeCommand();
@@ -133,6 +139,14 @@ public:
 		DWORD m_dwMultiItems;
 		CAtlMap<CString, CString> m_vars;
 		CRefCountPtr<CMenuItemData> m_d;
+		CString m_sIconFile;
+		int m_iIconIndex;
+		CString m_sPathToTest;
+		enum {
+			PATH_DOES_NOT_EXISTS,
+			PATH_EXISTS,
+			PATH_UNKNOWN
+		} m_eExistence;
 
 		class CInvokeCommandThread
 		{
@@ -178,6 +192,8 @@ public:
 	bool GetVariable(LPCTSTR key, CString &value, CMenuItem *pItem = NULL);
 	bool GetOurVariable(LPCTSTR key, CString &value, CMenuItem *pItem = NULL);
 	bool GetBoolean(LPCTSTR key, bool bDefault = false, CMenuItem *pItem = NULL);
+	bool ToBoolean(LPCTSTR str)
+	{ return !_tcscmp(str, _T("1")) || !_tcsicmp(str, _T("true")); }
 
 	HRESULT QueryContextMenu(HMENU hMenu, UINT indexMenu, UINT idCmdFirst, UINT idCmdLast, UINT uFlags);
 	bool InvokeCommand(UINT id)
@@ -199,9 +215,30 @@ private:
 	CAtlMap<UINT, CMenuItem *> m_cmd;
 
 	bool m_bVistaStyle;
+	bool m_bHideMissing;
+	bool m_bDeferredIO;
 	UINT m_idCmdFirst;
+	HANDLE m_hDeferredIOThread;
+	LONG m_iJobs;
+	bool m_bNoMoreJobs;
+	CMenuItem *m_aJobs[MAX_MENU_ITEM];
 
 	void PraseMenuItems(pug::xml_node &node, CMenuItem *pItem);
+	static DWORD WINAPI DeferredIOThread(LPVOID pParam)
+	{
+		((CKuMenuSet *) pParam)->DeferredIOThread();
+		return 0;
+	}
+	void DeferredIOThread();
+	void StopDeferredIOThread()
+	{
+		if (m_hDeferredIOThread) {
+			InterlockedExchange(&m_iJobs, -1);
+			WaitForSingleObject(m_hDeferredIOThread, INFINITE);
+			CloseHandle(m_hDeferredIOThread);
+			m_hDeferredIOThread = NULL;
+		}
+	}
 };
 
 extern CKuMenuSet g_menu;
