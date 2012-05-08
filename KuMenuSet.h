@@ -74,6 +74,11 @@ public:
 	{
 	public:
 		HICON GetIcon() const { return m_hIcon; }
+
+		static LPCTSTR ExpandFileName(LPCTSTR sName, LPCTSTR sFlags, CString &sDest);
+		static HBITMAP Create32BitBitmap(HDC hdc, int cx, int cy, VOID **ppvBits = NULL);
+		static HBITMAP IconToBitmap(HICON hIcon, int cx, int cy);
+		static HBITMAP IconToBitmap(HICON hIcon);
 	private:
 		friend class CKuMenuSet;
 
@@ -116,8 +121,6 @@ public:
 		{ return GetFirstSibling() == this; }
 		bool IsLast() const
 		{ return GetLastSibling() == this; }
-
-		static LPCTSTR ExpandFileName(LPCTSTR sName, LPCTSTR sFlags, CString &sDest);
 
 		enum {
 			DROP_SYMBOLIC = 0x00000000,

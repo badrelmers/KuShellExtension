@@ -80,9 +80,6 @@ public:
 
 	CRefCountPtr<CKuShellExtInitData> m_pData;
 
-	static HBITMAP Create32BitBitmap(HDC hdc, int cx, int cy, VOID **ppvBits = NULL);
-	static HBITMAP IconToBitmap(HICON hIcon, int cx, int cy);
-	static HBITMAP IconToBitmap(HICON hIcon);
 private:
 	UINT m_idCmdFirst;
 };

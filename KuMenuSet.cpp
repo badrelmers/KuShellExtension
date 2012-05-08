@@ -34,7 +34,8 @@
 	#pragma pop_macro("new")
 #endif
 
-#define PERCENT_EXPANSION_FLAGS		"dpnxs"
+#define PERCENT_EXPANSION_PARTS_FLAGS	"dpnx"
+#define PERCENT_EXPANSION_FLAGS			"dpnxsq"
 
 CKuMenuSet g_menu;
 
@@ -1440,47 +1441,64 @@ LPCTSTR CKuMenuSet::CMenuItem::ExpandFileName(LPCTSTR sName, LPCTSTR sFlags, CSt
 		CString sShortName;
 		sDest.Empty();
 		sFlags++;
+
 		if (_tcschr(sFlags, _T('s'))) {
 			GetAcpCompatiblePath(sName, sShortName.GetBufferSetLength(KU_MAX_PATH), KU_MAX_PATH);
 			sShortName.ReleaseBuffer();
 			sName = sShortName;
-
-			if (!_tcscmp(sFlags, _T("s"))) {
-				sDest = sName;
-				return sDest;
-			}
 		}
+
+		if (!sFlags[_tcscspn(sFlags, _T(PERCENT_EXPANSION_PARTS_FLAGS))]) { // no parts flags
+			if (_tcschr(sFlags, _T('q')) && _tcschr(sName, _T(' ')))
+				sDest.Format(_T("\"%s\""), sName);
+			else
+				sDest = sName;
+			return sDest;
+		}
+
 		if (_tcschr(sFlags, _T('d'))) {
 			int iDrive = PathGetDriveNumber(sName);
 			if (iDrive != -1)
 				sDest.Format(_T("%c:"), (TCHAR) iDrive + _T('A'));
 		}
-		LPTSTR sFileName = (LPTSTR) PathFindFileName(sName);
-		if (_tcschr(sFlags, _T('p'))) {
-			LPCTSTR sPath = _tcschr(sName, _T('\\'));
-			if (sPath && sFileName >= sPath) {
-				TCHAR ch = *sFileName;
-				*sFileName = _T('\0');
-				sDest += sPath;
-				*sFileName = ch;
+		if (PathIsDirectory(sName)) {
+			if (_tcschr(sFlags, _T('p'))) {
+				LPCTSTR sPath = _tcschr(sName, _T('\\'));
+				if (sPath)
+					sDest += sPath;
 			}
 		}
-		if (sFileName) {
-			LPTSTR sExt = (LPTSTR) _tcsrchr(sFileName, _T('.'));
-			if (_tcschr(sFlags, _T('n'))) {
-				if (sExt > sFileName) {
-					*sExt = _T('\0');
-					sDest += sFileName;
-					*sExt = _T('.');
+		else {
+			LPTSTR sFileName = (LPTSTR) PathFindFileName(sName);
+			if (_tcschr(sFlags, _T('p'))) {
+				LPCTSTR sPath = _tcschr(sName, _T('\\'));
+				if (sPath && sFileName >= sPath) {
+					TCHAR ch = *sFileName;
+					*sFileName = _T('\0');
+					sDest += sPath;
+					*sFileName = ch;
 				}
-				else
-					sDest += sFileName;
 			}
-			if (_tcschr(sFlags, _T('x'))) {
-				if (sExt)
-					sDest += sExt;
+			if (sFileName) {
+				LPTSTR sExt = (LPTSTR) _tcsrchr(sFileName, _T('.'));
+				if (_tcschr(sFlags, _T('n'))) {
+					if (sExt > sFileName) {
+						*sExt = _T('\0');
+						sDest += sFileName;
+						*sExt = _T('.');
+					}
+					else
+						sDest += sFileName;
+				}
+				if (_tcschr(sFlags, _T('x'))) {
+					if (sExt)
+						sDest += sExt;
+				}
 			}
 		}
+
+		if (_tcschr(sFlags, _T('q')) && sDest.Find(_T(' ')) >= 0)
+			sDest = _T('"') + sDest + _T('"');
 	}
 	else
 		sDest = sName;
@@ -1545,8 +1563,8 @@ void CKuMenuSet::CMenuItem::LoadIcon(LPCTSTR sFile, int iIndex)
 #endif
 	if (PathFileExists(sFile)) {
 		LPCTSTR sExt = _tcsrchr(sFile, _T('.'));
-		HICON hIcon;
-		HBITMAP hBitmap;
+		HICON hIcon = NULL;
+		HBITMAP hBitmap = NULL;
 		if (!sExt)
 			sExt = _T("");
 		else
@@ -1563,7 +1581,7 @@ void CKuMenuSet::CMenuItem::LoadIcon(LPCTSTR sFile, int iIndex)
 		else {
 			ExtractIconEx(sFile, iIndex, NULL, &hIcon, 1);
 			if (hIcon && ku::SysVer.m_vMajor >= 6)
-				hBitmap = CKuContextMenu::IconToBitmap(hIcon);
+				hBitmap = IconToBitmap(hIcon);
 		}
 
 		// XXX: This method may be called in a worker thread.
@@ -1576,4 +1594,134 @@ void CKuMenuSet::CMenuItem::LoadIcon(LPCTSTR sFile, int iIndex)
 	if (dll::Wow64RevertWow64FsRedirection)
 		dll::Wow64RevertWow64FsRedirection(oldWow64);
 #endif
+}
+
+
+/*
+	codes from eMule
+*/
+HBITMAP CKuMenuSet::CMenuItem::Create32BitBitmap(HDC hdc, int cx, int cy, VOID **ppvBits/* = NULL */)
+{
+	HBITMAP hBmp = NULL;
+	BITMAPINFO bmi = {0};
+	bmi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+	bmi.bmiHeader.biPlanes = 1;
+	bmi.bmiHeader.biCompression = BI_RGB;
+	bmi.bmiHeader.biWidth = cx;
+	bmi.bmiHeader.biHeight = cy;
+	bmi.bmiHeader.biBitCount = 32;
+
+	HDC hdcUsed = hdc ? hdc : GetDC(NULL);
+	if (hdcUsed)
+	{
+		hBmp = CreateDIBSection(hdcUsed, &bmi, DIB_RGB_COLORS, ppvBits, NULL, 0);
+		if (hdc != hdcUsed)
+			ReleaseDC(NULL, hdcUsed);
+	}
+	return hBmp;
+}
+
+HBITMAP CKuMenuSet::CMenuItem::IconToBitmap(HICON hIcon, int cx, int cy)
+{
+	if (!hIcon)
+		return NULL;
+
+	bool bIs32Bpp = false;
+	HBITMAP hBmp = NULL;
+	HDC hdcDest;
+	hdcDest = CreateCompatibleDC(GetDC(NULL));
+	if (!hdcDest)
+		return NULL;
+
+#if 0
+	ICONINFO icInfo = {0};
+	GetIconInfo(hIcon, &icInfo);
+
+	LPBITMAPINFO pBmpInfoColor, pBmpInfoMask;
+	RGBQUAD *bits = (RGBQUAD *) malloc(sizeof(RGBQUAD) * cx * cy);
+	DWORD *mask = (DWORD *) malloc((cx * cy) >> 2);
+
+	pBmpInfoColor = (LPBITMAPINFO) malloc(sizeof(BITMAPINFO) + sizeof(RGBQUAD) * cx * cy);
+	pBmpInfoMask = (LPBITMAPINFO) malloc(sizeof(BITMAPINFO) + sizeof(RGBQUAD) * cx * cy);
+	memset(pBmpInfoColor, 0, sizeof(BITMAPINFO));
+	memset(pBmpInfoMask, 0, sizeof(BITMAPINFO));
+	pBmpInfoColor->bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+	pBmpInfoMask->bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+
+	VERIFY( GetDIBits(hdcDest, icInfo.hbmColor, 0, 0, 0, pBmpInfoColor, DIB_RGB_COLORS) );
+	VERIFY( GetDIBits(hdcDest, icInfo.hbmColor, 0, cy, bits, pBmpInfoColor, DIB_RGB_COLORS) );
+	VERIFY( GetDIBits(hdcDest, icInfo.hbmMask, 0, 0, 0, pBmpInfoMask, DIB_RGB_COLORS) );
+	VERIFY( GetDIBits(hdcDest, icInfo.hbmMask, 0, cy, mask, pBmpInfoMask, DIB_RGB_COLORS) );
+	for (int i = 0;i < cx * cy;i++) {
+		if (bits[i].rgbReserved != 0) {
+			bIs32Bpp = true;
+			break;
+		}
+	}
+	if (!bIs32Bpp) {
+		for (int i = 0;i < cx * cy;i++) {
+			TRACE(_T("%d %d\n"), i >> 4, i & 0xF);
+			if (!( ( (HIWORD(mask[i >> 4]) ^ LOWORD(mask[i >> 4]) ) >> (i & 0xF) ) & 1 ))
+				bits[i].rgbReserved = 0xFF;
+		}
+	}
+	void *pDib = NULL;
+	hBmp = Create32BitBitmap(hdcDest, cx, cy, &pDib);
+	memcpy(pDib, bits, sizeof(RGBQUAD) * cx * cy);
+	//SetDIBits(hdcDest, hBmp, 0, cy, pDib, pBmpInfoColor, DIB_RGB_COLORS);
+	//hBmp = CreateBitmap(cx, cy, 1, 32, bits);
+	//hBmp = CreateDIBSection(hdcDest, 
+	free(pBmpInfoColor);
+	free(pBmpInfoMask);
+	free(bits);
+	free(mask);
+#else
+	// this works better when the icon contains 32bpp images, otherwise, it doesn't work. :(
+	hBmp = Create32BitBitmap(hdcDest, cx, cy);
+	if (hBmp) {
+		HBITMAP hBmpOld = (HBITMAP) SelectObject(hdcDest, hBmp);
+		DrawIconEx(hdcDest, 0, 0, hIcon, cx, cy, 0, NULL, DI_NORMAL);
+		SelectObject(hdcDest, hBmpOld);
+		LPBITMAPINFO pBmpInfo;
+		VERIFY( pBmpInfo = (LPBITMAPINFO) malloc(sizeof(BITMAPINFOHEADER) + sizeof(RGBQUAD) * cx * cy) );
+		memset(pBmpInfo, 0, sizeof(BITMAPINFO));
+		pBmpInfo->bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+		RGBQUAD *bits;
+		VERIFY( bits = (RGBQUAD *) malloc(cx * cy * sizeof(RGBQUAD)) );
+		// TODO: Find a better way to detect a icon is 32bpp or not.
+		if (GetDIBits(hdcDest, hBmp, 0, 0, 0, pBmpInfo, DIB_RGB_COLORS) &&
+			GetDIBits(hdcDest, hBmp, 0, 16, bits, pBmpInfo, DIB_RGB_COLORS))
+		{
+			for (int i = 0;i < cx * cy;i++) {
+				if (bits[i].rgbReserved != 0) {
+					bIs32Bpp = true;
+					break;
+				}
+			}
+		}
+		free(bits);
+		free(pBmpInfo);
+	}
+	DeleteDC(hdcDest);
+
+	// this works in most cases, but generates ugly images for such icons contains alpha channel and depend on GDI+
+	if (!bIs32Bpp && dll::GdipCreateBitmapFromHICON) {
+		if (dll::GdiplusStartup && !ku::gdiplusToken)
+			dll::GdiplusStartup(&ku::gdiplusToken, &ku::gdiplusStartupInput, NULL);
+		if (ku::gdiplusToken) {
+			DeleteObject(hBmp);
+			Gdiplus::GpBitmap *pBitmap = NULL;
+			if (dll::GdipCreateBitmapFromHICON(hIcon, &pBitmap) == Gdiplus::Ok) {
+				dll::GdipCreateHBITMAPFromBitmap(pBitmap, &hBmp, Gdiplus::Color::Transparent);
+				dll::GdipDisposeImage((Gdiplus::GpImage *) pBitmap);
+			}
+		}
+	}
+#endif
+	return hBmp;
+}
+
+HBITMAP CKuMenuSet::CMenuItem::IconToBitmap(HICON hIcon)
+{
+	return IconToBitmap(hIcon, ::GetSystemMetrics(SM_CXSMICON), ::GetSystemMetrics(SM_CYSMICON));
 }

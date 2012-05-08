@@ -1,4 +1,4 @@
-// test.cpp : Defines the entry point for the console application.
+﻿// test.cpp : Defines the entry point for the console application.
 //
 
 #include "stdafx.h"
@@ -28,10 +28,24 @@ void Init()
 
 int _tmain(int argc, _TCHAR* argv[])
 {
+	TCHAR buf[MAX_PATH];
+	CString s;
+	_tcscpy(buf, _T("C:\\Program Files"));
+	VERIFY( !_tcscmp(_T("C:\\Program Files"), CKuMenuSet::CMenuItem::ExpandFileName(buf, _T("~dp"), s)) );
+	VERIFY( !_tcscmp(_T("\"C:\\Program Files\""), CKuMenuSet::CMenuItem::ExpandFileName(buf, _T("~qdp"), s)) );
+	VERIFY( !_tcscmp(_T("\"C:\\Program Files\""), CKuMenuSet::CMenuItem::ExpandFileName(buf, _T("~q"), s)) );
+	VERIFY( !_tcscmp(_T("\"C:\\Program Files\""), CKuMenuSet::CMenuItem::ExpandFileName(buf, _T("~qs"), s)) );
+	_tcscpy(buf, _T("C:\\"));
+	VERIFY( !_tcscmp(_T("C:\\"), CKuMenuSet::CMenuItem::ExpandFileName(buf, _T("~dp"), s)) );
+	VERIFY( !_tcscmp(_T("C:\\"), CKuMenuSet::CMenuItem::ExpandFileName(buf, _T("~dpnx"), s)) );
+	VERIFY( !_tcscmp(_T("C:\\"), CKuMenuSet::CMenuItem::ExpandFileName(buf, _T("~q"), s)) );
+	_tcscpy(buf, _T("V:\\comic\\宮野ともちか\\ゆびさきミルクティー"));
+	VERIFY( !_tcscmp(_T("V:\\comic\\宮野ともちか\\ゆびさきミルクティー"), CKuMenuSet::CMenuItem::ExpandFileName(buf, _T("~q"), s)) );
+	VERIFY( !_tcscmp(_T("V:\\comic\\_YANZ6~J\\_M3C2Y~1"), CKuMenuSet::CMenuItem::ExpandFileName(buf, _T("~qs"), s)) );
+	return 0;
 	Init();
 
-	VERIFY( g_menu.ParseConfig(_T("E:\\software\\_ui_\\KuShellExtension\\config.xml")) );
-return 0;
+//	VERIFY( g_menu.ParseConfig(_T("E:\\software\\_ui_\\KuShellExtension\\config.xml")) );
 
 	VERIFY( g_menu.FromFile(_T("E:\\software\\_ui_\\KuShellExtension\\config.xml")) );
 
