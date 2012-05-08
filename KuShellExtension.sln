@@ -3,6 +3,8 @@ Microsoft Visual Studio Solution File, Format Version 11.00
 # Visual Studio 2010
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "KuShellExtension", "KuShellExtension.vcxproj", "{01122A33-8179-46C2-B50A-1C15F46F3EB1}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "test", "test\test.vcxproj", "{45CB6E4E-081B-49A5-AE13-1D93E96F8C33}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -19,6 +21,12 @@ Global
 		{01122A33-8179-46C2-B50A-1C15F46F3EB1}.Release|Win32.Build.0 = Release|Win32
 		{01122A33-8179-46C2-B50A-1C15F46F3EB1}.Release|x64.ActiveCfg = Release|x64
 		{01122A33-8179-46C2-B50A-1C15F46F3EB1}.Release|x64.Build.0 = Release|x64
+		{45CB6E4E-081B-49A5-AE13-1D93E96F8C33}.Debug|Win32.ActiveCfg = Debug|Win32
+		{45CB6E4E-081B-49A5-AE13-1D93E96F8C33}.Debug|Win32.Build.0 = Debug|Win32
+		{45CB6E4E-081B-49A5-AE13-1D93E96F8C33}.Debug|x64.ActiveCfg = Debug|Win32
+		{45CB6E4E-081B-49A5-AE13-1D93E96F8C33}.Release|Win32.ActiveCfg = Release|Win32
+		{45CB6E4E-081B-49A5-AE13-1D93E96F8C33}.Release|Win32.Build.0 = Release|Win32
+		{45CB6E4E-081B-49A5-AE13-1D93E96F8C33}.Release|x64.ActiveCfg = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
