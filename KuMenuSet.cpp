@@ -262,7 +262,8 @@ void CKuMenuSet::PraseMenuItems(pug::xml_node &node, CMenuItem *pItem)
 						}
 					}
 				}
-				if ((sIcon.IsEmpty() || m_bHideMissing) && pItem->m_d->m_eAction == ACT_EXECUTE) {
+				bool bHideMissing = m_bHideMissing && !ToBoolean(Substitute(node.attribute(_T("always-present")).value(), str, pItem));
+				if ((sIcon.IsEmpty() || bHideMissing) && pItem->m_d->m_eAction == ACT_EXECUTE) {
 					CString sProg = pItem->m_d->m_sAction;
 					LPTSTR pIcon = sProg.GetBuffer();
 					PathRemoveArgs(pIcon);
@@ -270,7 +271,7 @@ void CKuMenuSet::PraseMenuItems(pug::xml_node &node, CMenuItem *pItem)
 					sProg.ReleaseBuffer();
 					// drop the entries which use the missing programs.
 					// we should check the file existence here, because checking them on-the-fly may be very slow.
-					if (m_bHideMissing) {
+					if (bHideMissing) {
 						if (m_bDeferredIO)
 							pItem->m_sPathToTest = sProg;
 						else if (!PathFileExists(sProg)) {
@@ -281,7 +282,7 @@ void CKuMenuSet::PraseMenuItems(pug::xml_node &node, CMenuItem *pItem)
 							pItem->m_dwMultiItems = 1;
 							continue;
 						}
-					}	
+					}
 					if (sIcon.IsEmpty())
 						sIcon = sProg;
 				}
