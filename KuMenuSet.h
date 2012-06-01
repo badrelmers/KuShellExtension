@@ -66,6 +66,7 @@ public:
 		ACTION m_eAction;
 		CString m_sAction;
 		CString m_sWorkingDir;
+		CString m_sVerb;
 		bool m_bConsole;
 		int m_iWindowSize;
 	};

@@ -34,6 +34,9 @@
 	#pragma pop_macro("new")
 #endif
 
+#define DEBUG_LOGGING
+#include "log.h"
+
 #define PERCENT_EXPANSION_PARTS_FLAGS	"dpnx"
 #define PERCENT_EXPANSION_FLAGS			"dpnxsq"
 
@@ -288,6 +291,7 @@ void CKuMenuSet::PraseMenuItems(pug::xml_node &node, CMenuItem *pItem)
 				if (!str.IsEmpty())
 					pItem->m_d->m_iWindowSize = _ttoi(str);
 				Substitute(node.attribute(_T("workdir")).value(), pItem->m_d->m_sWorkingDir, pItem);
+				Substitute(node.has_attribute(_T("verb")) ? node.attribute(_T("verb")).value() : _T("${var:DEFAULT_VERB}"), pItem->m_d->m_sVerb, pItem);
 			}
 			if (!sIcon.IsEmpty()) {
 				LPTSTR pIcon = sIcon.GetBuffer();
@@ -1233,6 +1237,8 @@ DWORD CKuMenuSet::CMenuItem::CInvokeCommandThread::ThreadProc()
 				shexec.fMask = SEE_MASK_NOCLOSEPROCESS | SEE_MASK_FLAG_DDEWAIT | SEE_MASK_UNICODE | (m_d->m_bConsole ? 0 : SEE_MASK_NO_CONSOLE);
 				shexec.nShow = (m_d->m_bConsole ? m_d->m_iWindowSize : SW_HIDE);
 				shexec.lpDirectory = sWorkingDir;
+				if (!m_d->m_sVerb.IsEmpty())
+					shexec.lpVerb = m_d->m_sVerb;
 
 				size_t i, count = aCmds.GetCount();
 				for (i = 0;i < count;i++) {
@@ -1254,6 +1260,7 @@ DWORD CKuMenuSet::CMenuItem::CInvokeCommandThread::ThreadProc()
 						sFile.Format(_T("/c \"%s\""), aCmds[i].GetString());
 						shexec.lpParameters = sFile;
 					}
+					LOGD(_T("Exec Verb: %s\nFile: %s\nParam: %s"), CONST_STR(shexec.lpVerb), CONST_STR(shexec.lpFile), CONST_STR(shexec.lpParameters));
 					ShellExecuteEx(&shexec);
 					if (shexec.hProcess) {
 						if (i < count - 1 || !m_sTempFile.IsEmpty()) // don't wait for the last process

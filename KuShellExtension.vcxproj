@@ -191,6 +191,7 @@
     <ClCompile Include="KuShellExtension.cpp" />
     <ClCompile Include="KuShellExtensionFactory.cpp" />
     <ClCompile Include="KuShellExtInit.cpp" />
+    <ClCompile Include="log.cpp" />
     <ClCompile Include="NTFSLink.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
@@ -213,6 +214,7 @@
     <ClInclude Include="KuMenuSet.h" />
     <ClInclude Include="KuShellExtensionFactory.h" />
     <ClInclude Include="KuShellExtInit.h" />
+    <ClInclude Include="log.h" />
     <ClInclude Include="NTFSLink.h" />
     <ClInclude Include="pugxml.h" />
     <ClInclude Include="RefCount.h" />

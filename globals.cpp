@@ -19,6 +19,7 @@
 #include "stdafx.h"
 #include "globals.h"
 #include "KuMenuSet.h"
+#include "log.h"
 
 ULONG CRefCount::m_uInstances = 0;
 
@@ -63,11 +64,15 @@ HRESULT LoadConfig()
 	if (!GetFileInformationByHandle(hFile, &cfgFileInfo))
 		return E_FAIL;
 	CloseHandle(hFile);
-	if (oldInfo.nFileSizeLow != cfgFileInfo.nFileSizeLow || oldInfo.nFileSizeHigh != cfgFileInfo.nFileSizeHigh ||
-		oldInfo.ftLastWriteTime.dwLowDateTime != cfgFileInfo.ftLastWriteTime.dwLowDateTime || 
-		oldInfo.ftLastWriteTime.dwHighDateTime != cfgFileInfo.ftLastWriteTime.dwHighDateTime)
-		if (!g_menu.FromFile(sConfigFile))
-			return E_FAIL;
+	if ((oldInfo.nFileSizeLow != cfgFileInfo.nFileSizeLow
+		|| oldInfo.nFileSizeHigh != cfgFileInfo.nFileSizeHigh
+		|| oldInfo.ftLastWriteTime.dwLowDateTime != cfgFileInfo.ftLastWriteTime.dwLowDateTime
+		|| oldInfo.ftLastWriteTime.dwHighDateTime != cfgFileInfo.ftLastWriteTime.dwHighDateTime)
+		&& !g_menu.FromFile(sConfigFile))
+		return E_FAIL;
+
+	g_bLogEnabled = g_menu.GetBoolean(_T("LOGGING"));
+
 	return S_OK;
 }
 

@@ -25,6 +25,9 @@
 #include "globals.h"
 #include "dll.h"
 
+#define DEBUG_LOGGING
+#include "log.h"
+
 // Default CLSIDs, can be changed in configure file.
 #ifdef _WIN64
 #define CLSID_CONFIG _T("CLSID64")
@@ -141,23 +144,26 @@ EXTERN_C BOOL APIENTRY DllMain( HMODULE hModule,
                        LPVOID lpReserved
 					 )
 {
+	LOGD(_T("DllMain reason %u"), ul_reason_for_call);
 	switch (ul_reason_for_call)
 	{
 		case DLL_PROCESS_ATTACH:
 			{
+				LOGD(_T("KuShellExtension: DLL_PROCESS_ATTACH"));
 #ifdef _MSC_VER
 				_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF); // detect memory leaks
 #endif
 				GetModuleFileName(NULL, ku::sModulePath.GetBufferSetLength(KU_MAX_PATH), KU_MAX_PATH);
 				ku::sModulePath.ReleaseBuffer();
+				LOGD(_T("DLL_PROCESS_DETACH %s"), ku::sModulePath.GetString());
 				LPCTSTR sProcessName = _tcsrchr(ku::sModulePath, _T('\\'));
 				if (!sProcessName)
-					return FALSE;
+					LOGD_RETURN(FALSE);
 				sProcessName++;
 				int i;
 				for (i = 0;ku::sBlackList[i];i++)
 					if (!_tcsicmp(sProcessName, ku::sBlackList[i]))
-						return FALSE;
+						LOGD_RETURN(FALSE);
 				ku::hModule = hModule;
 				GetModuleFileName(hModule, ku::sModulePath.GetBufferSetLength(KU_MAX_PATH), KU_MAX_PATH);
 				ku::sModulePath.ReleaseBuffer();
@@ -165,13 +171,16 @@ EXTERN_C BOOL APIENTRY DllMain( HMODULE hModule,
 			}
 			break;
 		case DLL_THREAD_ATTACH:
+			LOGD(_T("DLL_THREAD_ATTACH"));
 			break;
 		case DLL_THREAD_DETACH:
+			LOGD(_T("DLL_THREAD_DETACH"));
 			break;
 		case DLL_PROCESS_DETACH:
+			LOGD(_T("DLL_PROCESS_DETACH"));
 			break;
 	}
-	return TRUE;
+	LOGD_RETURN(TRUE);
 }
 
 STDAPI DllRegisterServer()
@@ -223,6 +232,7 @@ STDAPI DllUnregisterServer()
 
 STDAPI DllGetClassObject(REFCLSID rclsid, REFIID riid, LPVOID * ppv)
 {
+	LOGD(_T("%S"), __FUNCTION__);
 	InitConfig();
 
     IUnknown *pObj = NULL;
@@ -231,7 +241,7 @@ STDAPI DllGetClassObject(REFCLSID rclsid, REFIID riid, LPVOID * ppv)
 		try {
 			pObj = new CKuShellExtensionFactory;
 			pObj->AddRef();
-		} catch (...) { return E_OUTOFMEMORY; }
+		} catch (...) { LOGD_RETURN(E_OUTOFMEMORY); }
 	}
     else
         return CLASS_E_CLASSNOTAVAILABLE;
@@ -242,13 +252,13 @@ STDAPI DllGetClassObject(REFCLSID rclsid, REFIID riid, LPVOID * ppv)
 			pObj->Release();
         else {
             delete pObj;
-            return E_UNEXPECTED;
+            LOGD_RETURN(E_UNEXPECTED);
         }
     }
     else
-        return E_OUTOFMEMORY;
+        LOGD_RETURN(E_OUTOFMEMORY);
 
-	return S_OK;
+	LOGD_RETURN(S_OK);
 }
 
 STDAPI DllCanUnloadNow()
