@@ -1584,6 +1584,7 @@ void CKuMenuSet::CMenuItem::LoadIcon(LPCTSTR sFile, int iIndex)
 			if (dll::GdipCreateBitmapFromFile(sFile, &pBitmap) == Gdiplus::Ok) {
 				dll::GdipCreateHICONFromBitmap(pBitmap, &hIcon);
 				dll::GdipCreateHBITMAPFromBitmap(pBitmap, &hBitmap, Gdiplus::Color::Transparent);
+				dll::GdipDisposeImage(pBitmap);
 			}
 		}
 		else {
