@@ -1261,7 +1261,12 @@ DWORD CKuMenuSet::CMenuItem::CInvokeCommandThread::ThreadProc()
 						sFile.Format(_T("/c \"%s\""), aCmds[i].GetString());
 						shexec.lpParameters = sFile;
 					}
-					LOGD(_T("Exec Verb: %s\nFile: %s\nParam: %s"), CONST_STR(shexec.lpVerb), CONST_STR(shexec.lpFile), CONST_STR(shexec.lpParameters));
+					if (g_bLogEnabled) {
+						LOG_ALWAYS(_T("Exec Verb: %s"), CONST_STR(shexec.lpVerb));
+						LOG_ALWAYS(_T("File: %s"), CONST_STR(shexec.lpFile));
+						LOG_ALWAYS(_T("Param: %s"), CONST_STR(shexec.lpParameters));
+						LOG_ALWAYS(_T("WorkDir: %s"), CONST_STR(shexec.lpDirectory));
+					}
 					ShellExecuteEx(&shexec);
 					if (shexec.hProcess) {
 						if (i < count - 1 || !m_sTempFile.IsEmpty()) // don't wait for the last process

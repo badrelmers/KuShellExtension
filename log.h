@@ -3,9 +3,10 @@
 extern bool g_bLogEnabled;
 
 void OutputDebugStringFormat(LPCTSTR fmt, ...);
+#define LOG_ALWAYS(fmt, ...) OutputDebugStringFormat(_T("KuShellExtension: ") fmt, __VA_ARGS__)
 
 #if !defined(NDEBUG) || defined(DEBUG_LOGGING)
-#define LOGD(fmt, ...) do { if (g_bLogEnabled) OutputDebugStringFormat(_T("KuShellExtension: ") fmt, __VA_ARGS__); } while (0)
+#define LOGD(...) do { if (g_bLogEnabled) LOG_ALWAYS(__VA_ARGS__); } while (0)
 #else
 #define LOGD(...) ((void) 0)
 #endif
