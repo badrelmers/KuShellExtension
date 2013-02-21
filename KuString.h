@@ -1,5 +1,5 @@
 /* This file is part of KuShellExtension
- * Copyright (C) 2008-2010 Kai-Chieh Ku (kjackie@gmail.com)
+ * Copyright (C) 2008-2013 Kai-Chieh Ku (kjackie@gmail.com)
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -17,6 +17,8 @@
  */
 
 #pragma once
+#ifndef KUSTRING_H_40B4C1B5_6554_4DDA_A5EA_E010EC57FC29
+#define KUSTRING_H_40B4C1B5_6554_4DDA_A5EA_E010EC57FC29
 
 /*
 	CKuStringT: A copy on write CString-like string class.
@@ -35,8 +37,12 @@
 #define _CRT_SECURE_NO_WARNINGS
 #define _CRT_NON_CONFORMING_SWPRINTFS
 #include <windows.h>
+#ifndef strcasecmp
 #define strcasecmp stricmp
+#endif
+#ifndef wcscasecmp
 #define wcscasecmp wcsicmp
+#endif
 #else
 #define _vsnwprintf vswprintf
 #endif
@@ -70,7 +76,7 @@
 
 #ifndef va_copy
 	#ifdef _WIN32
-		#define va_copy(dst, src) { (dst) = (src); }
+		#define va_copy(dst, src) do { (dst) = (src); } while (0)
 	#endif
 #endif
 
@@ -248,7 +254,7 @@ public:
 	inline static STRT Find(STRT str, T ch)
 	{
 		ASSERT(str);
-		for (;*str;*str++)
+		for (;*str;str++)
 			if (*str == ch)
 				return str;
 		return NULL;
@@ -710,7 +716,7 @@ public:
 		va_copy(ap2, ap);
 		int len = U::FormatV(NULL, 0, fmt, ap);
 		ASSERT(len >= 0);
-		// NOTE: The length argument of format function has different implementions.
+		// NOTE: The length argument of format function has different implementations.
 		// Use safe one, though it may waste 1 character space.
 		len++;
 		m_pData->Alloc(len);
@@ -732,7 +738,7 @@ public:
 		va_copy(ap2, ap);
 		int len = U::FormatV(NULL, 0, fmt, ap);
 		ASSERT(len >= 0);
-		// NOTE: The length argument of format function has different implementions.
+		// NOTE: The length argument of format function has different implementations.
 		// Use safe one, though it may waste 1 character space.
 		len++;
 		m_pData->Alloc(m_pData->m_iLength + len);
@@ -945,7 +951,7 @@ public:
 				iPos = iStart;
 				CKuStringDataT *pNew = new CKuStringDataT;
 				pNew->Alloc(iNewLen);
-				pNew->m_iLength = iNewLen; // we are sure the new string length
+				pNew->m_iLength = iNewLen; // we have known the new string length
 
 				STRT str = pNew->m_sString;
 				if (iPos > 0)
@@ -1160,3 +1166,5 @@ inline bool CKuStringUtilA::LoadString(CKuStringA &str, HINSTANCE hInstance, UIN
 	return !!StringWCharToChar(s, str, -1, '?', CP_ACP);
 }
 #endif
+
+#endif // KUSTRING_H_40B4C1B5_6554_4DDA_A5EA_E010EC57FC29
