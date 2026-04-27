@@ -92,12 +92,23 @@ STDMETHODIMP CKuShellExtInit::Initialize(
     }
 	else if (pidlFolder) {
 		m_pData->m_aFiles.SetCount(1);
-		SHGetPathFromIDList(pidlFolder, m_pData->m_aFiles[0].GetBufferSetLength(KU_MAX_PATH));
+		// in windows 7 Explorer crashes when i right-click on Libraries or any item there-under, Doucment, Music, Pictures, Video, Explorer crashed with: "Microsoft Visual C++ Runtime Library... as described here too https://shellfix.nirsoft.net/fix_shell_problem.html?id=789&dll=KuShellExtension64.dll
+		// The Libraries folder in Windows 7 is a virtual namespace folder (not a real filesystem folder on disk). It uses a special PIDL/GUID instead of a normal path, and many older shell extensions (including KuShellExtension) crash when they try to query its properties, expand variables like %u, %z, %~dpn1, %*, etc., or just classify the item during context-menu building.
+		// the problem occurs when i right-click the empty space (background) inside the virtual Libraries folder.
+		// Here is exactly what is happening: When you right-click a directory background, Windows passes a pidlFolder (a pointer to an item identifier list) to the extension's Initialize function. The code calls SHGetPathFromIDList to convert that PIDL into a string path.
+		// Because Libraries is a virtual folder, SHGetPathFromIDList fails. However, the original author did not check the return value of that function. When it fails, the string buffer contains random, uninitialized memory garbage. Because it contains garbage, the subsequent m_pData->m_aFiles[0].IsEmpty() check returns FALSE (it thinks it has a valid path). The extension then tries to process that garbage memory as a real file path, which causes the C++ Runtime crash.
+		// By checking bValidPath, if Windows passes the virtual Libraries folder PIDL to the extension, the code instantly recognizes that it's not a real file system path and returns E_UNEXPECTED. This tells Windows Explorer to silently skip loading the context menu for this specific click, preventing the crash entirely while keeping your context menu perfectly functional for real directory backgrounds.
+
+		// FIX: We MUST capture the return value. SHGetPathFromIDList returns FALSE for virtual folders.
+		BOOL bValidPath = SHGetPathFromIDList(pidlFolder, m_pData->m_aFiles[0].GetBufferSetLength(KU_MAX_PATH));
 		m_pData->m_aFiles[0].ReleaseBuffer();
 
-		// In some cases this can happen.
-		if (m_pData->m_aFiles[0].IsEmpty())
+		// If the API failed to resolve a physical path (like in Windows 7 Libraries) 
+		// or the path is empty, abort initialization gracefully to prevent memory crashes.
+		if (!bValidPath || m_pData->m_aFiles[0].IsEmpty()) {
+			m_pData->m_aFiles.RemoveAll();
 			return E_UNEXPECTED;
+		}
 
 		m_pData->m_bFromFolderBk = true;
 		m_pData->m_iType = CKuShellExtInitData::TypeDirectory;
