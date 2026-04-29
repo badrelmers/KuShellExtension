@@ -22,11 +22,13 @@ Latest Version: https://github.com/badrelmers/KuShellExtension/releases
 
 ## Build
 
-Open sln in visual studio 2010
+install visual studio 2010 or SDK 7.1, then run build_for_VS2010_or_SDK71.bat to build and create_release.bat to create a ready release folder with all the files
+
 
 ## Contribution
 
 I'm not maintaining this tool, only bug fixes for windows 7, but PR's are welcome.
+
 
 ## Usage
 
@@ -39,9 +41,33 @@ Require administrators' rights to install, because the modern systems only allow
 ![KuShellExtension in Windows Vista](doc/vista.png)
 ![KuShellExtension in Windows XP](doc/xp.png)
 
+
+## Known issues
+
+- bug1:
+KuShellExtension doc says:
+    %w  Expand to the working directory.
+
+if i select a symlink file ex: d:\ccc\file that points to a file outside of the current folder ex: e:\file , %w will return the current directory as e:\ not d:\ccc !!! this is bad
+this happens also to 7z, if i zip d:\ccc\file the zip will be saved in e:\ !!! so it semms a windows bug
+
+solution: do not select a symlink, if you want to select a symlink select another file but it must be a normal file, and right click on the normal file
+
+
+- bug2:
+KuShellExtension doc says:
+    %u[N]  Generates a UTF-8 encoded file name list and expand to the path of the list file. N is a number that tells KuShellExtension should skip first N files. This is used by WinRAR, which need to skip first file.
+
+if i select multiple files and one of them is a symlink and i right click on the symlink file (the bug does not happen if i right click on a normal file of the selected files) %u file will contain only the symlink file !!!
+this happens also to 7z, so it s a windows bug
+
+solution: do not select a symlink, if you want to select a symlink select another file but it must be a normal file, and right click on the normal file
+
+
 ## Authors
 - 2008-2013: KuShellExtension is created by Kai-Chieh Ku. If you have some questions about this program, please feel free to send an e-mail to kjackie(gmail). Chinese, English, and Japanese mails are accepted. https://sourceforge.net/projects/kushellext/
 - 2026: Badr Elmers - some bugs fixes.
+
 
 ## Alternatives
 - ShellAnything is a C++ open-source software which allow one to easily customize and add new options to *Windows Explorer* context menu. Define specific actions when a user right-click on a file or a directory.

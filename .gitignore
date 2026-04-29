@@ -22,3 +22,5 @@ CVS/
 
 Makefile.deps
 /KuShellExtension
+/build/
+/Release/
