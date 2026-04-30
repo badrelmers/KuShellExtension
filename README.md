@@ -44,29 +44,15 @@ Require administrators' rights to install, because the modern systems only allow
 
 ## Known issues
 
-- bug1:
-KuShellExtension doc says:
-    %w  Expand to the working directory.
+**Known Limitation: Symlink files and %w / %u behavior**
 
-if i select a symlink file ex: d:\ccc\file that points to a file outside of the current folder ex: e:\file , %w will return the current directory as e:\ not d:\ccc !!! this is bad
-this happens also to 7z, if i zip d:\ccc\file the zip will be saved in e:\ !!! so it semms a windows bug
+When a selected file is a symbolic link (symlink), Windows Explorer resolves the symlink to its target path _before_ passing file paths to shell extensions. This is a Windows Shell limitation that affects all shell extension–based tools, including 7-Zip.
 
-solution: do not select a symlink, if you want to select a symlink select another file but it must be a normal file, and right click on the normal file
+**Effect on %w (working directory):** If the right-clicked file is a symlink — for example, `D:\ccc\file` pointing to `E:\file` — Windows reports the path as `E:\file`. As a result, `%w` expands to `E:\` (the target's folder) instead of `D:\ccc\` (the folder where the symlink resides). The same behavior affects 7-Zip and other tools that rely on the working directory reported by Windows.
 
+**Effect on %u (file list):** If multiple files are selected and you right-click specifically on one of the symlinks in the selection, Windows discards the rest of the selection and passes only the resolved symlink target to the shell extension. As a result, the `%u` file list will contain only that one file instead of all selected files. Right-clicking on a non-symlink file in the same selection does not trigger this issue.
 
-- bug2:
-KuShellExtension doc says:
-    %u[N]  Generates a UTF-8 encoded file name list and expand to the path of the list file. N is a number that tells KuShellExtension should skip first N files. This is used by WinRAR, which need to skip first file.
-
-if i select multiple files and one of them is a symlink and i right click on the symlink file (the bug does not happen if i right click on a normal file of the selected files) %u file will contain only the symlink file !!!
-this happens also to 7z, so it s a windows bug
-
-solution: do not select a symlink, if you want to select a symlink select another file but it must be a normal file, and right click on the normal file
-
-
-## Authors
-- 2008-2013: KuShellExtension is created by Kai-Chieh Ku. If you have some questions about this program, please feel free to send an e-mail to kjackie(gmail). Chinese, English, and Japanese mails are accepted. https://sourceforge.net/projects/kushellext/
-- 2026: Badr Elmers - some bugs fixes.
+**Workaround for both issues:** Avoid right-clicking directly on a symlink file. Instead, right-click on any other normal (non-symlink) file in the selection. This causes Windows to report all selected file paths correctly, and `%w` / `%u` will behave as expected.
 
 
 ## Alternatives
@@ -81,3 +67,8 @@ solution: do not select a symlink, if you want to select a symlink select anothe
 	- GUI
 	- usefull to add or clean entries easly
 	- https://github.com/BluePointLilac/ContextMenuManager
+
+
+## Authors
+- 2008-2013: KuShellExtension is created by Kai-Chieh Ku. If you have some questions about this program, please feel free to send an e-mail to kjackie(gmail). Chinese, English, and Japanese mails are accepted. https://sourceforge.net/projects/kushellext/
+- 2026: Badr Elmers - some bugs fixes.
