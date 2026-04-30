@@ -141,6 +141,7 @@ del src\*.sdf
 del src\*.opensdf
 del /AH src\*.suo
 del src\*.user
+rmdir /Q /S src\ipch
 rmdir /Q /S build
 rmdir /Q /S Release
 

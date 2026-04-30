@@ -12,10 +12,7 @@ copy "%~dp0build\Release\bin\KuShellExtension.dll" "%release_dir%\KuShellExtensi
 copy "%~dp0build\x64\Release\bin\KuShellExtension.dll" "%release_dir%\KuShellExtension64.dll"
 
 
-copy "%~dp0resources\uninstall.cmd" "%release_dir%"
-copy "%~dp0resources\config.cht.xml" "%release_dir%"
-copy "%~dp0resources\config.xml" "%release_dir%"
-copy "%~dp0resources\install.cmd" "%release_dir%"
+copy "%~dp0resources\*" "%release_dir%"
 
 copy "%~dp0LICENSE.txt" "%release_dir%"
 copy "%~dp0README.md" "%release_dir%"

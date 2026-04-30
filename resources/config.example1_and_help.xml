@@ -1,0 +1,264 @@
+<?xml version="1.0" encoding="utf-8"?>
+<config version="1">
+<!--
+VARIABLES
+    KuShellExtension allows users define some variables to simplify the configuration, which will be substituted in attributes and text nodes of XML elements *after* it is defined in the configuration file.
+    The names of user defined and built-in variables are case-sensitive, but environment variables are case-insensitive. All variables are static-binding, which means it is only expanded when KuShellExtension parses this file.
+    KuShellExtension re-parses configuration whenever the configuration file is changed.
+
+    <var name="NAME">VALUE</var>
+        Define a variable named NAME and the value of it is VALUE.
+
+    ${var:NAME}
+        Expand to VALUE which is defined as above or some built-in ones.
+
+    ${env:NAME}
+        Expand to environment variables named NAME. (%NAME%)
+
+    ${NAME}
+        Expand to ${var:NAME} first, or expand to ${env:NAME} if ${var:NAME} is not exist.
+
+    built-in variables:
+        CONFIG: The path of configuration file.
+        KU_SHELL_EXTENSION_DIR: The directory which contains KuShellExtension.
+        KU_SHELL_EXTENSION_DRIVE: The drive (e.g. C:) which contains KuShellExtension.
+
+        Arch: Expand to "32" on 32bits Windows, "64" on 64bits Windows (even in WOW64 mode).
+        ArchName: "x86" or "x64", depend on OS (not CPU).
+        SysDir:
+            "C:\Windows\System32" (Windows 32bits, represent as Win32 following)
+            "C:\Windows\SysWOW64" (Windows 64bits, KuShellExtension 32bits, represent as WOW64 following)
+            "C:\Windows\System32" (Windows 64bits, KuShellExtension 64bits, represent as Win64 following)
+        SysDir32:
+            "C:\Windows\System32" (Win32)
+            "C:\Windows\SysWOW64" (WOW64 and Win64)
+        SysDir64:
+            "C:\Windows\System32" (all platforms)
+        ProgramFiles:
+            "C:\Program Files" (Win32)
+            "C:\Program Files (x86)" (WOW64)
+            "C:\Program Files" (Win64)
+        ProgramFiles32:
+            "C:\Program Files" (Win32)
+            "C:\Program Files (x86)" (WOW64 and Win64)
+        ProgramFiles64:
+            "C:\Program Files" (all platforms)
+        Documents: "My Documents" folder
+        CommonDocuments: "Common Documents" folder
+
+        Other available varables:
+          Pictures, CommonPictures, Music, CommonMusic, Video, CommonVideo,
+          Desktop, CommonDesktop, Startup, CommonStartup, Downloads, CommonDownloads
+
+    varables for configration:
+    	These varables will affect KuShellExtension in some way, you shouldn't use them other than configure KuShellExtension.
+
+    	LEGACY_STYLE (boolean):
+    	    Enable this if you are using a third-party theme in Windows Vista and the icons aren't drawn properly.
+    	HIDE_MISSING (boolean):
+    	    Enable this to hide the entries which point to some programs aren't existed.
+-->
+    <var name="LEGACY_STYLE">false</var>
+    <var name="HIDE_MISSING">false</var>
+
+	<var name="7zDir">${var:ProgramFiles64}\7-Zip</var>
+	<var name="7zG">${var:7zDir}\7zG.exe</var>
+	<var name="7zFM">${var:7zDir}\7zFM.exe</var>
+	<var name="UniExtract">${var:ProgramFiles}\UniExtract\UniExtract.exe</var>
+	<var name="upx">${var:ProgramFiles}\upx\upx</var>
+	<var name="WinRAR">${var:ProgramFiles32}\WinRAR\WinRAR.exe</var>
+	<var name="AppLoc">${env:windir}\AppPatch\AppLoc.exe</var>
+	<var name="AlcoholDir">${var:ProgramFiles32}\Alcohol Soft\Alcohol 52</var>
+	<var name="AxCmd">${var:AlcoholDir}\AxCmd.exe</var>
+	<var name="Alcohol">${var:AlcoholDir}\Alcohol.exe</var>
+
+	<var name="archive">.7z .zip .rar .cab .tar .ace</var>
+	<var name="video">.mpg .avi .wmv .rm .rmvb .mkv .mp4 .flv</var>
+	<var name="audio">.mp2 .mp3 .mpc .wma .ra .mka .ape .ogg .flac .tta .tak .wv</var>
+	<var name="image">.bmp .gif .jpg .jpe .jpeg .png .tga .tif .tiff</var>
+	<var name="exe">.exe .com .cmd .bat</var>
+	<var name="dll">.dll .ax .acm .vcm</var>
+	<var name="iso">.mds .mdf .ccd .img .cue .bin .iso .bwt .cdi .nrg .pdi .b5t .isz</var>
+
+<!--
+MENUS
+
+SYNOPSIS
+    <menu name="NAME"
+        class="CLASSES"
+        icon="ICON">
+        <menuitem name="NAME"
+            class="CLASSES"
+            icon="ICON"
+            action="execute|builtin"
+            console="true|false"
+            multiple="N"
+            workdir="PATH"
+            >
+            ACTION
+        </menuitem>
+    </menu>
+
+    <for V="V1 V2 V3..." U="U1 U2 U3" ...>...</for>
+
+DESCRIPTION
+    <menu>...</menu>
+        Define a submenu.
+    <menuitem>...</menutiem>
+        Define a leaf entry of menu. To create a separator, use four hyphens ('-') as its name.
+    <for V="V1 V2 V3..." U="U1 U2 U3 ..." ...>...</for>
+        For ... in loop, ${var:V} and ${var:U} are available in the <for></for> scope.
+
+ATTRIBUTES
+    "name="
+        The string shown on the menu.
+
+    "icon="
+        The path of icon shown on the the menu, it can be a DLL, excuatable file (EXE), or icon file (ICO). If there are multiple icons in a file, an optional index can be append to the path with a comma. If the icon is not specified in a menu entry, the icon of the application would be used.
+
+        Ex. icon="C:\Windows\System32\shell32.dll,2"
+            will use the third icon in "shell32.dll", the index is counted from zero.
+            
+    "class="
+        Specify the menu entry or the submenu should show on what situations. The following formats are allowed.
+        .???        Matches file extension
+        *           Matches all files
+        folder      Matches all folders
+		drive       Matches all drives
+		drive:removable  Matches all removable drives
+		drive:fixed      Matches all fixed drives
+		drive:network    Matches all network drives
+		drive:optical    Matches all optical drives
+		drive:ramdisk    Matches all network drives
+		at:PATH          Matches the files at PATH with wildcard
+		in:DIR           Matches the files in DIR
+
+        If the class of a submenu(<menu>) is not specified, it will be shown if there is a child entry should be shown. On the other hand, if the class of a menu(<menuitem>) is not specified, it will use it parent setting if it exists, or "*" will be used.
+
+    "action="
+        The type of the action when user click on the menu entry, current only two type are available. The first is "execute", which is the default, it means execute the command line defined in the (text) node. The second is "builtin", which means the action is pre-defined by KuShellExtension, see BUILT-IN ACTIONS section for details.
+
+    "console="
+        Set this to true if the application is a console program and you would like to hide the command prompt window. Don't use it with normal GUI programs.
+
+    "multiple="
+        Specify the number of arguments the action supports. The menu entry will only be shown when the number of files/folders is selected. Set it to 0 means it is unlimited. If this value is not specified, KuShellExtension tries to detect it by the command line.
+
+    "workdir="
+        The working directory to execute the command. "." (a single dot) causes KuShellExtension to use the directory of the executable file. ".\" causes KuShellExtension always use the selected directory.
+
+ACTIONS
+    Normal actions is described as a command line, for the usability, some (dynamic) variables are allowed (see % EXPANSION below). Note you may need to use quotes for the strings that contains spaces, but do not use " directly, because it is not allowed in XML, use &quot; instead.
+
+% EXPANSION
+    %1 %2 %3 ... %9
+        Expand to the first, second, third, ... file the user selected.
+    %w
+        Expand to the working directory.
+    %z
+        Expand to archive name, useful with WinZIP/WinRAR/7-Zip etc. See the example below.
+    %*
+        Expand to all files the user selected. DO NOT USE QUOTES WITH THIS.
+    %@
+        The same with the above, except the command will be executed separately. For example, the user selected 10 files and click the menu entry, then the command would be executed 10 times. DO NOT USE QUOTES WITH THIS.
+    %u[N]
+        Generates a UTF-8 encoded file name list and expand to the path of the list file. N is a number that tells KuShellExtension should skip first N files. This is used by WinRAR, which need to skip first file.
+    %L[N]
+        Generates a UTF-16 encoded file name list and expand to the path of the list file.
+    %l[N]
+        Generates a system codepage encoded file name list and expand to the path of the list file.
+    %c[N]
+        Expand to the file path in the clipboard, you could copy the files from explorer or copy them as text. N is the index of files in clipboard, which is counted from zero. (%c0 -> first file, %c1 -> second file, ...)
+    %%
+        Expand to '%' character.
+
+MODIFIERS OF % EXPANSION
+    Some modifiers can be use in % EXPANSION, the format is like Windows Command Prompt. The following are available modifier characters.
+
+    d
+        Drive letter.
+    p
+        Directory without drive letter.
+    n
+        File name without extension.
+    x
+        File extension.
+    s
+        System codepage compatible path, substitutes incompatible parts with 8.3 short file name.
+
+    Ex. %1 = "C:\path\to\the\file.txt"
+        %~d1 = "C:"
+        %~p1 = "\path\to\the\"
+        %~dp1 = "C:\path\to\the\"
+        %~nx1 = "file.txt"
+        %~dpn1 = "C:\path\to\the\file"
+
+BUILT-IN ACTIONS
+    DropSymLinks [0|1]
+        Create symbolic links (>= Vista), the target of links are taken from clipboard. This command takes one argument with the value 0 or 1. Use 0 to create the links with relative path, 1 to create the links with absolute path.
+    DropJunctions
+        Create junctions.
+    DropHardLinks
+        Create hard links.
+    Reload
+        Reload the config file.
+-->
+	<menu name="AppLocale" icon="${var:AppLoc}">
+		<for lang="Japanese Chinese(Trad.) Chinese(Simp.)" id="0411 0404 0804" icon="107 216 43">
+			<menuitem name="${var:lang}" class="${var:exe} ${var:cmd}">&quot;${var:AppLoc}&quot; &quot;%1&quot; /L${var:id}</menuitem>
+			<menuitem name="7-Zip (${var:lang})" class="${var:archive}">&quot;${var:AppLoc}&quot; &quot;${var:7zFM}&quot; &quot;\&quot;%1\&quot;&quot; /L${var:id}</menuitem>
+			<menuitem name="WinRAR (${var:lang})" class="${var:archive}">&quot;${var:AppLoc}&quot; &quot;${var:WinRAR}&quot; &quot;\&quot;%1\&quot;&quot; /L${var:id}</menuitem>
+			<menuitem name="MSI (${var:lang})" class=".msi">&quot;${var:AppLoc}&quot; &quot;${var:SysDir32}\msiexec.exe&quot; /i &quot;\&quot;%1\&quot;&quot; /L${var:id}</menuitem>
+		</for>
+	</menu>
+	<menu name="Mount CD Image" class="${var:iso}" icon="${var:Alcohol}">
+		<for disk="H I J K">
+			<menuitem name="${var:disk}:" icon="${var:CDDriveIcon}">&quot;${var:AxCmd}&quot; ${var:disk}: /M:&quot;%1&quot;</menuitem>
+		</for>
+	</menu>
+	<menuitem name="----" class="* folder" />
+	<menu name="&amp;7-Zip" icon="${var:7zFM}">
+		<menuitem name="Extract to *\">&quot;${var:7zG}&quot; x -o&quot;%w\*&quot; -an -ai&quot;@%u&quot;</menuitem>
+		<menuitem name="Extract to here">&quot;${var:7zG}&quot; x -o&quot;%w&quot; -an -ai&quot;@%u&quot;</menuitem>
+		<menuitem name="Extract to ...">&quot;${var:7zG}&quot; x -o&quot;%~dpn1&quot; -ad -an -ai&quot;@%u&quot;</menuitem>
+		<menuitem name="Add to archive ..." class="* folder">&quot;${var:7zG}&quot; a -i&quot;@%u&quot; -ad -- &quot;%z&quot;</menuitem>
+		<menuitem name="Add to .7z archive" class="* folder">&quot;${var:7zG}&quot; a -i&quot;@%u&quot; -t7z -- &quot;%z.7z&quot;</menuitem>
+		<menuitem name="Add to .zip archive" class="* folder">&quot;${var:7zG}&quot; a -i&quot;@%u&quot; -tzip -- &quot;%z.zip&quot;</menuitem>
+		<menuitem name="Test the archive">&quot;${var:7zG}&quot; t -an -ai&quot;@%u&quot;</menuitem>
+		<menuitem name="Open the archive">&quot;${var:7zFM}&quot; &quot;%1&quot;</menuitem>
+	</menu>
+	<menu name="WinRAR" icon="${var:WinRAR}">
+		<menuitem name="Extract to *\">&quot;${var:WinRAR}&quot; x -iext -ow -ver -anf=&quot;%L1&quot; -scul -ad -- &quot;%1&quot; &quot;%w&quot;</menuitem>
+		<menuitem name="Extract to here">&quot;${var:WinRAR}&quot; x -iext -ow -ver -anf=&quot;%L1&quot; -scul -- &quot;%1&quot; &quot;%w&quot;</menuitem>
+		<menuitem name="Extract to ...">&quot;${var:WinRAR}&quot; x -iext -ow -ver -anf=&quot;%L1&quot; -scul -- &quot;%1&quot; &quot;?\&quot;</menuitem>
+		<menuitem name="Add to archive ..." class="* folder">&quot;${var:WinRAR}&quot; a -ep1 -scul -r0 -iext -- . &quot;@%L&quot;</menuitem>
+		<menuitem name="Add to .rar archive" class="* folder">&quot;${var:WinRAR}&quot; a -ep1 -scul -r0 -iext -- &quot;%z.rar&quot; &quot;@%L&quot;</menuitem>
+		<menuitem name="Test the archive">&quot;${var:WinRAR}&quot; t -iext -anf=&quot;%L1&quot; -scul -- &quot;%1&quot;</menuitem>
+		<menuitem name="Recover the archive">&quot;${var:WinRAR}&quot; r -iext -anf=&quot;%L1&quot; -scul -- &quot;%1&quot; &quot;%w&quot;</menuitem>
+		<menuitem name="Open the archive">&quot;${var:WinRAR}&quot; &quot;%1&quot;</menuitem>
+	</menu>
+	<menu name="UniExtract" icon="${var:UniExtract}">
+		<menuitem name="Extract to *\">&quot;${var:UniExtract}&quot; %@ /sub</menuitem>
+		<menuitem name="Extract to here">&quot;${var:UniExtract}&quot; %@ %~dp@</menuitem>
+		<menuitem name="Open the archive">&quot;${var:UniExtract}&quot; &quot;%1&quot;</menuitem>
+	</menu>
+	<menu name="UPX">
+		<menuitem name="Compress" class=".exe ${var:dll}">&quot;${var:upx}.exe&quot; --lzma -9 %*</menuitem>
+		<menuitem name="Decompress" class=".exe ${var:dll}">&quot;${var:upx}.exe&quot; -d %*</menuitem>
+	</menu>
+	<menuitem name="----" class="* folder" />
+	<menu name="RegSvr32" class="${var:dll}">
+		<menuitem name="Register">regsvr32.exe /s %@</menuitem>
+		<menuitem name="Unregister">regsvr32.exe /s /u %@</menuitem>
+	</menu>
+	<menuitem name="Command Prompt">&quot;${env:comspec}&quot; /k &quot;cd /d &quot;%1&quot;&quot;</menuitem>
+	<menu name="Create links ..." class="folder">
+		<menuitem name="Symbolic links (relative)" action="builtin">DropSymLinks 0</menuitem>
+		<menuitem name="Symbolic links (absolute)" action="builtin">DropSymLinks 1</menuitem>
+		<menuitem name="Hard links" action="builtin">DropHardLinks</menuitem>
+		<menuitem name="Junctions" action="builtin">DropJunctions</menuitem>
+	</menu>
+	<menuitem name="----" class="* folder" />
+	<menuitem name="Reload Configuration" class="* folder" multiple="0" action="builtin">Reload</menuitem>
+	<menuitem name="KuShellExtension Configuration" class="* folder" multiple="0">notepad.exe &quot;${var:CONFIG}&quot;</menuitem>
+</config>

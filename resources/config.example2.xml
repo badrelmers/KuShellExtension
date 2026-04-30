@@ -1,0 +1,350 @@
+<?xml version="1.0" encoding="utf-8"?>
+<config version="1">
+	<var name="HIDE_MISSING">true</var>
+
+	<var name="SoftBase">${var:KU_SHELL_EXTENSION_DRIVE}\software</var>
+	<var name="IconDir">${var:KU_SHELL_EXTENSION_DIR}\icons</var>
+	<var name="KuUtils">${var:SoftBase}\_util_\KuUtils</var>
+	<var name="CmdHide">${var:KuUtils}\CmdHide.exe</var>
+	<var name="Cmd32">${var:SysDir32}\cmd.exe</var>
+	<var name="Cmd64">${var:SysDir64}\cmd.exe</var>
+
+	<var name="7zDir">${var:SoftBase}\_arch_\7-Zip\${var:Arch}</var>
+	<var name="7zG">${var:7zDir}\7zG.exe</var>
+	<var name="7zFM">${var:7zDir}\7zFM.exe</var>
+	<var name="7zFM32">${var:SoftBase}\_arch_\7-Zip\32\7zFM.exe</var>
+	<var name="UniExtract">${var:SoftBase}\_arch_\UniExtract\UniExtract.exe</var>
+	<var name="WinRAR">${var:SoftBase}\_arch_\WinRAR\${var:Arch}\WinRAR.exe</var>
+	<var name="WinRAR32">${var:SoftBase}\_arch_\WinRAR\32\WinRAR.exe</var>
+
+	<var name="countryflag">${var:SoftBase}\_net_\eMule\config\countryflag32.dll</var>
+	<var name="AppLoc">${env:windir}\AppPatch\AppLoc.exe</var>
+	<var name="NTLEADIR">${var:SoftBase}\_util_\NTLEA</var>
+	<var name="NTLEA">${var:NTLEADIR}\ntlea.exe</var>
+	<var name="NTLEAC">${var:NTLEADIR}\ntleac.exe</var>
+
+	<var name="EmEditor">${var:SoftBase}\_dev_\EmEditor\${var:Arch}\EmEditor.exe</var>
+	<var name="notepad">${var:SysDir64}\notepad.exe</var>
+
+	<var name="editor_name">EmEditor</var>
+	<var name="editor">${var:EmEditor}</var>
+
+	<var name="OverDisk">${var:SoftBase}\_util_\OverDisk\OverDisk.exe</var>
+	<var name="Firefox">${var:SoftBase}\_net_\MozFx\firefox.exe</var>
+	<var name="MangaMeeyaCE">${var:SoftBase}\_image_\MangaMeeyaCE\MangaMeeyaCE.exe</var>
+
+	<var name="ExeIcon">${var:SysDir}\shell32.dll,2</var>
+	<var name="CDDriveIcon">${var:SysDir}\shell32.dll,78</var>
+
+	<var name="archive">.7z .zip .rar .cab .tar .ace .lzh</var>
+	<var name="video">.mpg .avi .wmv .rm .rmvb .mkv .mp4 .flv .f4v .m2ts</var>
+	<var name="audio">.mp2 .mp3 .mpc .wma .ra .mka .ape .ogg .flac .tta .tak .wv .wav</var>
+	<var name="image">.bmp .gif .jpg .jpe .jpeg .png .tga .tif .tiff .xpm</var>
+	<var name="exe">.exe .com</var>
+	<var name="cmd">.cmd .bat</var>
+	<var name="dll">.dll .ax .acm .vcm .cpl .api</var>
+	<var name="iso">.mds .mdf .ccd .img .cue .bin .iso .bwt .cdi .nrg .pdi .b5t .isz</var>
+	<var name="xml">.xml .rss .rdf .xul</var>
+	<var name="ico">.exe .ico .icl ${var:dll}</var>
+
+	<!-- MENU START -->
+	<menuitem name="CmdHide" class="${var:cmd}" console="false">%@</menuitem>
+	<menu name="AppLocale" icon="${var:AppLoc}">
+		<for lang="日本語 正體中文 简体中文" id="0411 0404 0804" icon="107 216 43">
+			<menuitem name="${var:lang}" class="${var:exe} ${var:cmd}" icon="${var:countryflag},${var:icon}">&quot;${var:AppLoc}&quot; &quot;%1&quot; /L${var:id}</menuitem>
+			<menuitem name="7-Zip (${var:lang})" class="${var:archive}" icon="${var:countryflag},${var:icon}">&quot;${var:AppLoc}&quot; &quot;${var:7zFM32}&quot; &quot;\&quot;%1\&quot;&quot; /L${var:id}</menuitem>
+			<menuitem name="WinRAR (${var:lang})" class="${var:archive}" icon="${var:countryflag},${var:icon}">&quot;${var:AppLoc}&quot; &quot;${var:WinRAR32}&quot; &quot;\&quot;%1\&quot;&quot; /L${var:id}</menuitem>
+			<menuitem name="MangaMeeyaCE (${var:lang})" class="${var:archive}" icon="${var:countryflag},${var:icon}">&quot;${var:AppLoc}&quot; &quot;${var:MangaMeeyaCE}&quot; &quot;\&quot;%1\&quot;&quot; /L${var:id}</menuitem>
+			<menuitem name="MSI (${var:lang})" class=".msi" icon="${var:countryflag},${var:icon}">&quot;${var:AppLoc}&quot; &quot;${var:SysDir32}\msiexec.exe&quot; /i &quot;\&quot;%1\&quot;&quot; /L${var:id}</menuitem>
+			<menuitem name="OverDisk (${var:lang})" class="folder" icon="${var:countryflag},${var:icon}">&quot;${var:AppLoc}&quot; &quot;${var:OverDisk}&quot; &quot;\&quot;%1\&quot;&quot; /L${var:id}</menuitem>
+		</for>
+	</menu>
+
+	<menu name="NTLEA" icon="${var:NTLEA}">
+		<for lang="日本語 正體中文 简体中文" lcid="1041 1028 2052" cp="932 950 936" icon="107 216 43">
+			<menuitem name="${var:lang}" class="${var:exe} ${var:cmd}" icon="${var:countryflag},${var:icon}">&quot;${var:NTLEAC}&quot; &quot;%1&quot; L${var:lcid} C${var:cp}</menuitem>
+			<menuitem name="7-Zip (${var:lang})" class="${var:archive}" icon="${var:countryflag},${var:icon}">&quot;${var:NTLEAC}&quot; &quot;${var:7zFM32}&quot; &quot;A'%1'&quot; L${var:lcid} C${var:cp}</menuitem>
+			<menuitem name="WinRAR (${var:lang})" class="${var:archive}" icon="${var:countryflag},${var:icon}">&quot;${var:NTLEAC}&quot; &quot;${var:WinRAR32}&quot; &quot;A'%1'&quot; L${var:lcid} C${var:cp}</menuitem>
+			<menuitem name="MSI (${var:lang})" class=".msi" icon="${var:countryflag},${var:icon}">&quot;${var:NTLEAC}&quot; &quot;${var:SysDir32}\msiexec.exe&quot; &quot;A/i '%1'&quot; L${var:lcid} C${var:cp}</menuitem>
+		</for>
+	</menu>
+
+	<menu name="Visual Studio" class=".sln .vcproj .vcxproj .dsw .dsp" icon="${var:ProgramFiles32}\Common Files\Microsoft Shared\MSEnv\VSLauncher.exe">
+		<menuitem name="Visual Studio 2010">&quot;${var:ProgramFiles32}\Microsoft Visual Studio 10.0\Common7\IDE\devenv.exe&quot; &quot;%1&quot;</menuitem>
+		<menuitem name="Visual Studio 2008">&quot;${var:ProgramFiles32}\Microsoft Visual Studio 9.0\Common7\IDE\devenv.exe&quot; &quot;%1&quot;</menuitem>
+		<menuitem name="Visual Studio 2005">&quot;${var:ProgramFiles32}\Microsoft Visual Studio 8\Common7\IDE\devenv.exe&quot; &quot;%1&quot;</menuitem>
+	</menu>
+
+	<!--
+	<var name="AlcoholDir">${var:ProgramFiles32}\Alcohol Soft\Alcohol 52</var>
+	<var name="AxCmd">${var:AlcoholDir}\AxCmd.exe</var>
+	<var name="Alcohol">${var:AlcoholDir}\Alcohol.exe</var>
+	<menu name="掛載映像檔" class="${var:iso}" icon="${var:Alcohol}">
+		<for disk="H I">
+			<menuitem name="Drive ${var:disk}:" icon="${var:CDDriveIcon}">&quot;${var:AxCmd}&quot; ${var:disk}: /M:&quot;%1&quot;</menuitem>
+		</for>
+	</menu>
+	-->
+
+	<var name="DaemonTools">${var:ProgramFiles32}\DAEMON Tools Lite\DTLite.exe</var>
+	<var name="DaemonToolsIcons">${var:ProgramFiles32}\DAEMON Tools Lite\DTLiteUI.dll</var>
+	<var name="DaemonToolsIconMount">${var:DaemonToolsIcons},2</var>
+	<var name="DaemonToolsIconUnmount">${var:DaemonToolsIcons},9</var>
+	<menu name="掛載映像檔" class="${var:iso}" icon="${var:DaemonTools}">
+		<for disk="0 1">
+			<menuitem name="Drive ${var:disk}" icon="${var:DaemonToolsIconMount}">&quot;${var:DaemonTools}&quot; -mount ${var:disk},&quot;%1&quot;</menuitem>
+		</for>
+	</menu>
+	<for drive="H I" disk="0 1">
+		<menuitem name="卸載映像檔" icon="${var:DaemonToolsIconUnmount}" class="at:${var:drive}:">&quot;${var:DaemonTools}&quot; -unmount ${var:disk}</menuitem>
+	</for>
+
+	<var name="VBoxDir">${var:ProgramFiles64}\Sun\VirtualBox</var>
+	<var name="VBoxManage">${var:VBoxDir}\VBoxManage.exe</var>
+	<var name="VirtualBox">${var:VBoxDir}\VirtualBox.exe</var>
+	<menu name="VirtualBox" class=".vdi" icon="${var:VirtualBox}">
+		<for type="normal immutable">
+			<menuitem name="modifyhd ${var:type}" console="false">&quot;${var:VBoxManage}&quot; modifyhd %@ --type ${var:type}</menuitem>
+		</for>
+	</menu>
+
+	<menu name="登錄" class=".reg" icon="${env:SystemRoot}\regedit.exe">
+		<menuitem name="32bit">&quot;${var:SysDir32}\regedt32.exe&quot; /s %@</menuitem>
+		<menuitem name="64bit">&quot;${var:SysDir64}\regedt32.exe&quot; /s %@</menuitem>
+	</menu>
+
+	<var name="ImgBurnDir">${var:SoftBase}\_util_\ImgBurn</var>
+	<menuitem name="ImgBurn" class="${var:iso}" icon="${var:ImgBurnDir}\ImgBurn.exe">&quot;${var:ImgBurnDir}\ImgBurn.js&quot; /MODE WRITE /SOURCE &quot;%1&quot;</menuitem>
+
+	<var name="GIMPDir">${var:SoftBase}\_image_\GIMP</var>
+	<!-- GIMP is a Unicode program, but it doesn't accept Unicode command line arguments. -->
+	<menuitem name="GIMP" class="${var:image}" icon="${var:GIMPDir}\bin\gimp-2.6.exe">&quot;${var:GIMPDir}\GIMP.js&quot; %~s*</menuitem>
+
+	<menuitem name="OptiPNG" class="${var:image}" icon="${var:IconDir}\Graph.ico">&quot;${var:SoftBase}\_image_\optipng\optipng.exe&quot; %~s*</menuitem>
+
+	<var name="JPEGR">${var:SoftBase}\_image_\jpegr\jpegr.exe</var>
+	<for name="順時鐘旋轉90度 逆時鐘旋轉90度 旋轉180度" opt="-r -l -u" icon="redo undo refresh">
+		<menuitem name="${var:name}" class=".jpg .jpe .jpeg" icon="${var:IconDir}\${var:icon}.ico">&quot;${var:JPEGR}&quot; ${var:opt} %~s@</menuitem>
+	</for>
+
+	<var name="sqlite">.sqlite .sqlite3</var>
+	<var name="SQLiteManagerDir">${var:SoftBase}\_util_\SQLiteManager</var>
+	<var name="SQLiteIcon">${var:SQLiteManagerDir}\chrome\icons\default\default16.png</var>
+	<menuitem name="SQLiteManager" class="${var:sqlite}" icon="${var:SQLiteIcon}">&quot;${var:Firefox}&quot; -app &quot;${var:SQLiteManagerDir}\application.ini&quot; -f &quot;%1&quot;</var>
+	<menuitem name="Compact SQLite Database" class="${var:sqlite}" icon="${var:SQLiteIcon}" console="false">&quot;${var:SoftBase}\_util_\GnuStatic\sqlite3.exe&quot; %@ VACUUM;</menuitem>
+
+	<menuitem name="Audacity" class="${var:audio}">&quot;${var:SoftBase}\_media_\_util_\audacity\audacity.exe&quot; &quot;%1&quot;</menuitem>
+	<menuitem name="Nero WaveEditor" class="${var:audio}">&quot;${var:ProgramFiles32}\Nero\Nero8\Nero WaveEditor\waveedit.exe&quot; &quot;%~s1&quot; -ScParameter=65</menuitem>
+	<menuitem name="EmEditor">&quot;${var:EmEditor}&quot; %*</menuitem>
+	<menuitem name="Notepad">&quot;${var:notepad}&quot; %*</menuitem>
+
+	<var name="smoopy">${var:SoftBase}\_util_\smoopy\smoopy.exe</var>
+	<menuitem name="smoopy" class=".txt .htm .html" icon="${var:smoopy}">
+		<!-- &quot;${var:NTLEAC}&quot; &quot;${var:smoopy}&quot; &quot;A'%1'&quot; L1041 C932 -->
+		&quot;${var:AppLoc}&quot; &quot;${var:smoopy}&quot; &quot;\&quot;%1\&quot;&quot; /L0411
+	</menuitem>
+
+	<var name="tvt">${var:SoftBase}\_util_\tvt\tvt.exe</var>
+	<menuitem name="扉～とびら～" class=".txt" icon="${var:tvt}">&quot;${var:NTLEAC}&quot; &quot;${var:tvt}&quot; &quot;A'%1'&quot; L1041 C932</menuitem>
+
+	<menuitem name="QXmlEdit" class="${var:xml}">&quot;${var:SoftBase}\_dev_\QXmlEdit\QXmlEdit.exe&quot; &quot;%1&quot;</menuitem>
+	<menuitem name="Firefox" class="${var:xml} .txt">&quot;${var:Firefox}&quot; %*</menuitem>
+
+	<for class="&quot;${var:image}&quot; &quot;${var:archive} folder&quot;" mode="0 2">
+		<menuitem name="MangaMeeyaCE" class="${var:class}">&quot;${var:MangaMeeyaCE}&quot; /viewmode ${var:mode} %*</menuitem>
+	</for>
+
+	<var name="Imagine">${var:SoftBase}\_image_\Imagine\${var:Arch}\Imagine.exe</var>
+	<menuitem name="Imagine" class="${var:image}">&quot;${var:Imagine}&quot; &quot;%1&quot;</menuitem>
+	<menuitem name="Imagine" class="${var:archive} folder">&quot;${var:Imagine}&quot; /browse:&quot;%1&quot;</menuitem>
+
+	<menuitem name="Hamana" class="${var:image} ${var:archive} folder">&quot;${var:SoftBase}\_image_\Hamana\Hamana.exe&quot; &quot;%1&quot;</menuitem>
+
+	<var name="KeyringPDF">${var:ProgramFiles32}\Keyring.net\KRM\krmdec\krspdf.exe</var>
+	<menuitem name="KeyringPDF" class=".krm" icon="${var:KeyringPDF}">&quot;${var:AppLoc}&quot; &quot;${var:KeyringPDF}&quot; &quot;\&quot;%1\&quot;&quot; /L0411</menuitem>
+	<menuitem name="KeyringPDF Backup" class=".krm" icon="${var:KeyringPDF}">&quot;${var:AppLoc}&quot; &quot;${var:KeyringPDF}&quot; &quot;-bf \&quot;%1\&quot; \&quot;%~dpn1.krb\&quot;&quot; /L0411</menuitem>
+	<menuitem name="KeyringPDF Portable" class=".krm" icon="${var:KeyringPDF}">&quot;${var:AppLoc}&quot; &quot;${var:KeyringPDF}&quot; &quot;-ua \&quot;%1\&quot;&quot; /L0411</menuitem>
+
+	<menuitem name="----" class="* folder" />
+
+	<menu name="&amp;7-Zip" icon="${var:7zFM}">
+		<menuitem name="解壓縮到 *\">&quot;${var:7zG}&quot; x -o&quot;%w\*&quot; -an -ai&quot;@%u&quot;</menuitem>
+		<menuitem name="解壓縮至此">&quot;${var:7zG}&quot; x -o&quot;%w&quot; -an -ai&quot;@%u&quot;</menuitem>
+		<menuitem name="解壓縮到...">&quot;${var:7zG}&quot; x -o&quot;%~dpn1&quot; -ad -an -ai&quot;@%u&quot;</menuitem>
+		<menuitem name="加到壓縮檔..." class="* folder">&quot;${var:7zG}&quot; a -i&quot;@%u&quot; -ad -- &quot;%z&quot;</menuitem>
+		<menuitem name="加到 .7z 壓縮檔" class="* folder">&quot;${var:7zG}&quot; a -i&quot;@%u&quot; -t7z -- &quot;%z.7z&quot;</menuitem>
+		<menuitem name="加到 .zip 壓縮檔" class="* folder">&quot;${var:7zG}&quot; a -i&quot;@%u&quot; -tzip -- &quot;%z.zip&quot;</menuitem>
+		<menuitem name="測試壓縮檔">&quot;${var:7zG}&quot; t -an -ai&quot;@%u&quot;</menuitem>
+		<menuitem name="開啟壓縮檔">&quot;${var:7zFM}&quot; &quot;%1&quot;</menuitem>
+	</menu>
+
+	<menu name="WinRAR" icon="${var:WinRAR}">
+		<menuitem name="解壓縮到 *\">&quot;${var:WinRAR}&quot; x -ow -ver -anf=&quot;%L1&quot; -scul -ad -- &quot;%1&quot; &quot;%w&quot;</menuitem>
+		<menuitem name="解壓縮至此">&quot;${var:WinRAR}&quot; x -iext -ow -ver -anf=&quot;%L1&quot; -scul -- &quot;%1&quot; &quot;%w&quot;</menuitem>
+		<menuitem name="解壓縮到...">&quot;${var:WinRAR}&quot; x -iext -ow -ver -anf=&quot;%L1&quot; -scul -- &quot;%1&quot; &quot;?\&quot;</menuitem>
+		<menuitem name="加到壓縮檔..." class="* folder">&quot;${var:WinRAR}&quot; a -ep1 -scul -r0 -iext -- . &quot;@%L&quot;</menuitem>
+		<menuitem name="加到 .rar 壓縮檔" class="* folder">&quot;${var:WinRAR}&quot; a -ep1 -scul -r0 -iext -- &quot;%z.rar&quot; &quot;@%L&quot;</menuitem>
+		<menuitem name="加到 .rar 壓縮檔 (個別)" class="* folder">&quot;${var:WinRAR}&quot; a -ep1 -r0 -iext -- %~n@.rar %@</menuitem>
+		<menuitem name="測試壓縮檔">&quot;${var:WinRAR}&quot; t -iext -anf=&quot;%L1&quot; -scul -- &quot;%1&quot;</menuitem>
+		<menuitem name="修復壓縮檔">&quot;${var:WinRAR}&quot; r -iext -anf=&quot;%L1&quot; -scul -- &quot;%1&quot; &quot;%w&quot;</menuitem>
+		<menuitem name="開啟壓縮檔">&quot;${var:WinRAR}&quot; &quot;%1&quot;</menuitem>
+	</menu>
+
+	<menu name="UniExtract" icon="${var:UniExtract}">
+		<menuitem name="解壓縮到 *\">&quot;${var:UniExtract}&quot; %@ /sub</menuitem>
+		<menuitem name="解壓縮至此">&quot;${var:UniExtract}&quot; %@ %~dp@</menuitem>
+		<menuitem name="開啟壓縮檔">&quot;${var:UniExtract}&quot; &quot;%1&quot;</menuitem>
+	</menu>
+
+	<var name="upx">${var:SoftBase}\_arch_\upx\upx</var>
+	<menu name="UPX" icon="${var:IconDir}\Good.ico">
+		<for classies="&quot;.exe ${var:dll}&quot; folder" cmd=".exe .cmd" workdir="&quot;&quot; .\" args="%* &quot;&quot;">
+			<for name="壓縮 壓縮(不包含圖示) 解壓縮" opts="&quot;--lzma -9&quot; &quot;--lzma -9 --compress-icons=0&quot; -d">
+				<menuitem name="${var:name}" class="${var:classies}" workdir="${var:workdir}">&quot;${var:upx}${var:cmd}&quot; ${var:opts} ${var:args}</menuitem>
+			</for>
+		</for>
+	</menu>
+
+	<menuitem name="MPRESS" class=".exe ${var:dll}">&quot;${var:SoftBase}\_arch_\mpress\mpress.exe&quot; %@</menuitem>
+
+	<menuitem name="----" class="* folder" />
+
+	<menu name="RegSvr32" class="${var:dll}" icon="${var:IconDir}\Key.ico">
+		<menuitem name="登錄">&quot;${var:SysDir64}\regsvr32.exe&quot; /s %@</menuitem>
+		<menuitem name="解除">&quot;${var:SysDir64}\regsvr32.exe&quot; /s /u %@</menuitem>
+	</menu>
+
+	<menu name="命令提示字元" class="folder" icon="${env:comspec}">
+		<for name="KuUtils git &quot;VC2010 x86&quot; &quot;VC2010 x64&quot; &quot;VC2008 x86&quot; &quot;VC2008 x64&quot; qt-msvc qt-mingw perl pure"
+			set="&quot;&quot; git &quot;vc 10.0 x86&quot; &quot;vc 10.0 x64&quot; &quot;vc 9.0 x86&quot; &quot;vc 9.0 x64&quot; qt-msvc qt-mingw perl pure"
+			cmd="&quot;${Cmd64}&quot; &quot;${Cmd32}&quot; &quot;${Cmd64}&quot;"
+			exit="k c k">
+			<menuitem name="${var:name}">&quot;${var:cmd}&quot; /${var:exit} &quot;&quot;${var:KuUtils}\kuutils.cmd&quot; &quot;%1&quot; ${var:set}&quot;</menuitem>
+		</for>
+		<menuitem name="預設">&quot;${env:comspec}&quot; /k &quot;cd /d &quot;%1&quot;&quot;</menuitem>
+		<menuitem name="DOS" workdir=".\" icon="${env:comspec}">&quot;${var:SysDir}\command.com&quot;</menuitem>
+	</menu>
+
+	<menuitem name="Media Player Classic" class="${var:video} ${var:audio} .mpcpl">&quot;${var:SoftBase}\_media_\_play_\mpc-hc\32\mpc-hc.exe&quot; /new /play %*</menuitem>
+	<menuitem name="Media Player Classic x64" class="${var:video} ${var:audio} .mpcpl">&quot;${var:SoftBase}\_media_\_play_\mpc-hc\64\mpc-hc.exe&quot; /new /play %*</menuitem>
+	<menuitem name="SMPlayer" class="${var:video} ${var:audio}">&quot;${var:SoftBase}\_media_\_play_\smplayer\smplayer.exe&quot; %~s*</menuitem>
+	<menuitem name="Windows Media Player" class="${var:video} ${var:audio}">&quot;${var:ProgramFiles32}\Windows Media Player\wmplayer.exe&quot; %*</menuitem>
+	<menuitem name="&amp;MediaInfo" class="${var:video} ${var:audio}">&quot;${var:SoftBase}\_media_\_info_\MediaInfo\MediaInfo.exe&quot; %~s*</menuitem>
+
+	<menu name="建立連結..." class="folder" icon="${var:IconDir}\link.ico">
+		<menuitem name="符號連結(相對路徑)" action="builtin">DropSymLinks 0</menuitem>
+		<menuitem name="符號連結(絕對路徑)" action="builtin">DropSymLinks 1</menuitem>
+		<menuitem name="實體連結" action="builtin">DropHardLinks</menuitem>
+		<menuitem name="交叉點" action="builtin">DropJunctions</menuitem>
+	</menu>
+
+	<menuitem name="OverDisk" class="folder">&quot;${var:OverDisk}&quot; &quot;%1&quot;</menuitem>
+
+	<var name="PuTTYDir">${var:SoftBase}\_net_\PuTTY</var>
+	<var name="PSCP">${var:PuTTYDir}\pscp.exe</var>
+	<var name="PSCPWait">${var:PuTTYDir}\pscp-wait.cmd</var>
+	<menu name="PSCP" icon="${var:PSCP}">
+		<for dir="TODO public_html">
+			<menuitem name="${var:dir}" icon="${var:PSCP}">&quot;${var:PSCPWait}&quot; %* jackie@ku.myftp.org:${var:dir}</menuitem>
+		</for>
+	</menu>
+	<menuitem name="重新命名 .FILENAME" action="builtin" icon="${var:IconDir}\rename.png">Rename .%~nx@</menuitem>
+
+	<!-- KuShellExtension MENU START -->
+	<menu name="&amp;KuShellExtension" icon="${var:IconDir}\Coeur.ico">
+		<menuitem name="VirusTotal">&quot;${var:SoftBase}\_util_\VirusTotalUpload2.exe&quot; %@</menuitem>
+		<var name="HxD">${var:SoftBase}\_dev_\HxD\HxD.exe</var>
+		<menu name="&amp;HxD" icon="${var:HxD}">
+			<menuitem name="&amp;Edit">&quot;${var:HxD}&quot; %*</menuitem>
+			<menuitem name="&amp;View">&quot;${var:HxD}&quot; /readonly %*</menuitem>
+		</menu>
+
+		<menuitem name="WinHEX">&quot;${var:SoftBase}\_dev_\WinHEX\WinHEX.exe&quot; %*</menuitem>
+
+		<var name="KDiff3">${var:SoftBase}\_dev_\KDiff3\KDiff3.exe</var>
+		<menu name="K&amp;Diff3" icon="${var:KDiff3}">
+			<menuitem name="比較選取的檔案" class="* folder">&quot;${var:KDiff3}&quot; &quot;%1&quot; &quot;%2&quot; -o &quot;%1&quot;</menuitem>
+			<menuitem name="和剪貼簿裡面的檔案比較" class="* folder">&quot;${var:KDiff3}&quot; &quot;%1&quot; &quot;%c0&quot; -o &quot;%1&quot;</menuitem>
+			<menuitem name="合併選取的檔案" class="* folder">&quot;${var:KDiff3}&quot; &quot;%1&quot; &quot;%2&quot; &quot;%3&quot; -o &quot;%1&quot;</menuitem>
+		</menu>
+
+		<var name="WinMerge">${var:SoftBase}\_dev_\WinMerge\WinMergeU.exe</var>
+		<menu name="&amp;WinMerge" icon="${var:WinMerge}">
+			<menuitem name="比較選取的檔案" class="* folder">&quot;${var:WinMerge}&quot; /r &quot;%1&quot; &quot;%2&quot;</menuitem>
+			<menuitem name="和剪貼簿裡面的檔案比較" class="* folder">&quot;${var:WinMerge}&quot; /r &quot;%1&quot; &quot;%c0&quot;</menuitem>
+			<menuitem name="解決衝突">&quot;${var:WinMerge}&quot; &quot;%1&quot;</menuitem>
+		</menu>
+
+		<menu name="比較檔案" icon="${var:IconDir}\Find.ico">
+			<menuitem name="比較選取的檔案">&quot;${var:SysDir64}\comp.exe&quot; &quot;%1&quot; &quot;%2&quot;</menuitem>
+			<menuitem name="和剪貼簿裡面的檔案比較">&quot;${var:SysDir64}\comp.exe&quot; &quot;%1&quot; &quot;%c0&quot;</menuitem>
+		</menu>
+
+		<menuitem name="----" class="* folder" />
+
+		<var name="GitDir">${var:SoftBase}\_dev_\Git</var>
+		<var name="GitIcon">${var:GitDir}\share\git-gui\lib\git-gui.ico</var>
+		<menuitem name="Gitk" class="folder" icon="${var:GitIcon}" console="false" workdir=".\">&quot;${var:GitDir}\cmd\gitk.cmd&quot;</menuitem>
+		<menuitem name="Git GUI" class="folder" icon="${var:GitIcon}" console="false" workdir=".\">&quot;${var:GitDir}\cmd\git.cmd&quot; gui</menuitem>
+
+		<menuitem name="My&amp;Rename" class="folder">&quot;${var:SoftBase}\_util_\MyRename\MyRename.exe&quot; &quot;%1&quot;</menuitem>
+		<menuitem name="Ku&amp;Finder" class="folder">&quot;${var:SoftBase}\_image_\KuViewer\KuFinder.exe&quot; &quot;%1&quot;</menuitem>
+		<!-- <menuitem name="Ku&amp;Viewer" class="${var:image}">&quot;${var:SoftBase}\_image_\KuViewer\KuViewer.exe&quot; %*</menuitem> -->
+		<!-- <menuitem name="Mp3Tag" class="folder">&quot;${var:SoftBase}\_media_\_util_\Mp3tag\Mp3tag.exe&quot; &quot;%1&quot;</menuitem> -->
+		<menuitem name="MiniWebSvr" class="folder" icon="${var:IconDir}\Phone.ico">&quot;${var:SoftBase}\_net_\MiniWebSvr\miniweb.exe&quot; -p 45012 --nolog</menuitem>
+		<menuitem name="ArtIcons Pro" class="${var:ico}">&quot;${var:SoftBase}\_image_\ArtIcons Pro\ArtIcons.exe&quot; &quot;%1&quot;</menuitem>
+		<menuitem name="IconsExt" class="${var:ico}">&quot;${var:SoftBase}\_util_\iconsext\iconsext.exe&quot; /save &quot;%~s1&quot; &quot;${var:SoftBase}\_ui_\RKLauncher\top\icons\temp&quot; -icons</menuitem>
+		<menuitem name="ResHacker" class=".exe .res ${var:dll}">&quot;${var:SoftBase}\_util_\ResHacker\ResHacker.exe&quot; &quot;%1&quot;</menuitem>
+		<menuitem name="XNResourceEditor" class=".exe .res ${var:dll}">&quot;${var:SoftBase}\_util_\XNResourceEditor.exe&quot; &quot;%1&quot;</menuitem>
+
+		<var name="DllExp">${var:SoftBase}\_dev_\dllexp\dllexp.exe</var>
+		<var name="DllExp64">${var:SoftBase}\_dev_\dllexp\dllexp64.exe</var>
+		<menu name="DLL Export Viewer" icon="${var:DllExp}">
+			<for bits="32 64" prog="&quot;${var:DllExp}&quot; &quot;${var:DllExp64}&quot;">
+				<for class="&quot;${var:dll}&quot; folder" opt1="/from_textfile &quot;/subfolders /from_files&quot;" opt2="%l %1\*.dll">
+					<menuitem name="${var:bits}bit" class="${var:class}">&quot;${var:prog}&quot; ${var:opt1} &quot;${var:opt2}&quot;</menuitem>
+				</for>
+			</for>
+		</menu>
+
+		<!-- <menuitem name="HashCalc">&quot;${var:SoftBase}\_util_\HashCalc\HashCalc.exe&quot; &quot;%~s1&quot;</menuitem> -->
+
+		<var name="KuHasher">${var:SoftBase}\_util_\KuHasher\KuHasher</var>
+		<menu name="KuHasher" icon="${var:IconDir}\BioHazard.ico">
+			<for algo="MD5 SHA-1 CRC32 ED2K ED2K-AICH" txt="md5.txt sha1.txt crc32.txt ed2k.txt">
+				<menuitem name="----" class="* folder" />
+				<menuitem name="${var:algo}">&quot;${var:KuHasher}.cmd&quot; -m ${var:algo} %~nx*</menuitem>
+				<menuitem name="${var:algo}" class="folder">&quot;${var:KuHasher}.cmd&quot; -m ${var:algo} *</menuitem>
+				<menuitem name="Save ${var:algo} sums" console="false">&quot;${var:KuHasher}.exe&quot; -m ${var:algo} -o ${var:txt} %~nx*</menuitem>
+				<menuitem name="Save ${var:algo} sums" class="folder" console="false">&quot;${var:KuHasher}.exe&quot; -m ${var:algo} -o ${var:txt} *</menuitem>
+				<menuitem name="Check ${var:algo} sums">&quot;${var:KuHasher}.cmd&quot; -m ${var:algo} -c %*</menuitem>
+				<!-- <menuitem name="Check ${var:algo} sums" class="folder">&quot;${var:KuHasher}.cmd&quot; -m ${var:algo} -c ${var:txt}</menuitem> -->
+			</for>
+		</menu>
+
+		<menuitem name="BEncode Editor" class=".torrent">&quot;${var:SoftBase}\_util_\BEncode Editor\BEncode Editor.exe&quot; &quot;%1&quot;</menuitem>
+		<menuitem name="Nero Burning ROM" class="${var:iso}">&quot;${var:ProgramFiles32}\Nero\Nero8\Nero Burning Rom\nero.exe&quot; &quot;%1&quot;</menuitem>
+		<menuitem name="KillBox" class="* folder" multiple="0">&quot;${var:SoftBase}\_util_\KillBox.exe&quot; &quot;%1&quot;</menuitem>
+		<menuitem name="Show Short Path" class="* folder">&quot;${env:comspec}&quot; /c &quot;echo %~s1 &amp;&amp; pause&quot;</menuitem>
+
+		<menuitem name="----" class="* folder" />
+
+		<menuitem name="重新整理" class="* folder" icon="${var:IconDir}\Help.ico" action="builtin" multiple="0">Reload</menuitem>
+		<menuitem name="編輯設定" class="* folder" icon="${var:IconDir}\Settings.ico" multiple="0">&quot;${var:editor}&quot; &quot;${var:CONFIG}&quot;</menuitem>
+		<menu name="Debug" class="hidden">
+			<menuitem name="Debug">
+				&quot;${env:comspec}&quot; /c &quot;
+					echo Arch: ${var:Arch}, ${var:ArchName} &amp;&amp;
+					echo SysDir: ${var:SysDir}, ${var:SysDir32}, ${var:SysDir64} &amp;&amp;
+					echo ProgramFiles: ${var:ProgramFiles}, ${var:ProgramFiles32}, ${var:ProgramFiles64} &amp;&amp;
+					echo Documents: ${var:Documents}, ${var:CommonDocuments} &amp;&amp;
+					echo Pictures: ${var:Pictures}, ${var:CommonPictures} &amp;&amp;
+					echo Music: ${var:Music}, ${var:CommonMusic} &amp;&amp;
+					echo Video: ${var:Video}, ${var:CommonVideo} &amp;&amp;
+					echo Desktop: ${var:Desktop}, ${var:CommonDesktop} &amp;&amp;
+					echo Startup: ${var:Startup}, ${var:CommonStartup} &amp;&amp;
+				pause&quot;
+			</menuitem>
+		</menu>
+	</menu>
+</config>

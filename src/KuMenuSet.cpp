@@ -28,6 +28,9 @@
 	#pragma push_macro("new")
 	#undef new
 #endif
+#define PUGAPI_VARIANT 0x58475550
+#define PUGAPI_VERSION_MAJOR 1
+#define PUGAPI_VERSION_MINOR 2
 #include "pugxml.h"
 #include <memory>
 #if defined(_MSC_VER) && defined(_DEBUG)
@@ -337,12 +340,12 @@ void CKuMenuSet::PraseMenuItems(pug::xml_node &node, CMenuItem *pItem)
 			ARGS args;
 			int argc = 0;
 			CString str;
-			for (int i = 0;i < node.attributes();i++) {
-				if (!node.attribute(i).has_value())
+			for (size_t i = 0;i < node.attributes();i++) {
+				if (!node.attribute((unsigned int)i).has_value())
 					continue;
-				args.argv = CommandLineToArgvW(Substitute(node.attribute(i).value(), str, pItem), &(args.argc));
+				args.argv = CommandLineToArgvW(Substitute(node.attribute((unsigned int)i).value(), str, pItem), &(args.argc));
 				if (args.argv) {
-					args.name = node.attribute(i).name();
+					args.name = node.attribute((unsigned int)i).name();
 					vars.Add(args);
 					argc = max(argc, args.argc);
 				}
@@ -1084,7 +1087,7 @@ DWORD CKuMenuSet::CMenuItem::CInvokeCommandThread::ThreadProc()
 					TCHAR ch = ptr[1];
 					ptr[1] = _T('\0');
 					int i = ch - _T('1');
-					if (i <= count - 1)
+					if (i >= 0 && (size_t)i <= count - 1)
 						for (size_t n = 0;n < aCmds.GetCount();n++)
 							aCmds[n] += ExpandFileName(m_pData->m_aFiles[i], sFlags, sExpand);
 					ptr[1] = ch;
@@ -1150,7 +1153,7 @@ DWORD CKuMenuSet::CMenuItem::CInvokeCommandThread::ThreadProc()
 											*((wchar_t *)eol) = L'\r';
 											*(((wchar_t *)eol) + 1) = L'\n';
 											if (WriteFile(hFile, bom, 2, &dwWritten, NULL)) {
-												for (int i = iFrom;i < count;i++) {
+												for (int i = iFrom;i < (int)count;i++) {
 													ExpandFileName(m_pData->m_aFiles[i], sFlags, sExpand);
 													if (!WriteFile(hFile, (LPCVOID) sExpand.GetString(), sExpand.GetLength() * sizeof(wchar_t), &dwWritten, NULL) ||
 														!WriteFile(hFile, (LPCVOID) eol, 4, &dwWritten, NULL))
@@ -1161,7 +1164,7 @@ DWORD CKuMenuSet::CMenuItem::CInvokeCommandThread::ThreadProc()
 										case _T('l'):
 											eol[0] = '\r';
 											eol[1] = '\n';
-											for (int i = iFrom;i < count;i++) {
+											for (int i = iFrom;i < (int)count;i++) {
 												CStringCharFromWChar sFile(ExpandFileName(m_pData->m_aFiles[i], sFlags, sExpand));
 												if (!WriteFile(hFile, (LPCVOID) sFile.GetString(), sFile.GetLength() * sizeof(char), &dwWritten, NULL) ||
 													!WriteFile(hFile, (LPCVOID) eol, 2, &dwWritten, NULL))
@@ -1175,7 +1178,7 @@ DWORD CKuMenuSet::CMenuItem::CInvokeCommandThread::ThreadProc()
 											eol[0] = '\r';
 											eol[1] = '\n';
 											if (WriteFile(hFile, bom, 3, &dwWritten, NULL)) {
-												for (int i = iFrom;i < count;i++) {
+												for (int i = iFrom;i < (int)count;i++) {
 													CStringUTF8FromWChar sFile(ExpandFileName(m_pData->m_aFiles[i], sFlags, sExpand));
 													if (!WriteFile(hFile, (LPCVOID) sFile.GetString(), sFile.GetLength() * sizeof(char), &dwWritten, NULL) ||
 														!WriteFile(hFile, (LPCVOID) eol, 2, &dwWritten, NULL))
@@ -1328,7 +1331,7 @@ DWORD CKuMenuSet::CMenuItem::CInvokeCommandThread::ThreadProc()
 					break;
 				case CMD_ID_RENAME:
 					{
-						int n = aCmds.GetCount();
+						int n = (int)aCmds.GetCount();
 						int argc;
 						LPWSTR *argv;
 						CString sWD;

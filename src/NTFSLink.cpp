@@ -76,17 +76,17 @@ BOOL WINAPI CreateJunctionPoint(LPCWSTR sLinkPath, LPCWSTR sTarget)
 			RETURN(FALSE);
 	}
 
-	len = wcslen(pBuffer->MountPointReparseBuffer.PathBuffer) * sizeof(WCHAR);
+	len = (DWORD)(wcslen(pBuffer->MountPointReparseBuffer.PathBuffer) * sizeof(WCHAR));
 
 	// Set PrintName to ""
 	*((WCHAR *)(((char *) pBuffer->MountPointReparseBuffer.PathBuffer) + len + sizeof(WCHAR))) = 0;
 
-	pBuffer->MountPointReparseBuffer.SubstituteNameLength = len;
+	pBuffer->MountPointReparseBuffer.SubstituteNameLength = (USHORT)len;
 	pBuffer->MountPointReparseBuffer.SubstituteNameOffset = 0;
 	pBuffer->MountPointReparseBuffer.PrintNameLength = 0;
-	pBuffer->MountPointReparseBuffer.PrintNameOffset = len + sizeof(WCHAR);
+	pBuffer->MountPointReparseBuffer.PrintNameOffset = (USHORT)(len + sizeof(WCHAR));
 	// + sizeof(WCHAR) * 2 for the '\0's of SubstituteName and PrintName
-	pBuffer->ReparseDataLength = len + sizeof(WCHAR) * 2 + MOUNT_POINT_PATH_OFFSET - REPARSE_DATA_BUFFER_HEADER_SIZE;
+	pBuffer->ReparseDataLength = (USHORT)(len + sizeof(WCHAR) * 2 + MOUNT_POINT_PATH_OFFSET - REPARSE_DATA_BUFFER_HEADER_SIZE);
 
 	if ((hFile = OpenJunctionPointFile(sLinkPath, GENERIC_WRITE)) == INVALID_HANDLE_VALUE)
 		RETURN(FALSE);

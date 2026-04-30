@@ -2477,9 +2477,9 @@ public:
 				{
 					const unsigned int n =
 #ifdef PUGOPT_NONSEG
-						min(valuelen,node->value_size);
+						(unsigned int)min(valuelen,node->value_size);
 #else
-						min(valuelen,_tcslen(node->value));
+						(unsigned int)min(valuelen,_tcslen(node->value));
 #endif
 					_tcsncpy(value,node->value,n);
 					value[n] = 0;
