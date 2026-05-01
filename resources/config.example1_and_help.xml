@@ -148,7 +148,7 @@ ATTRIBUTES
         The working directory to execute the command. "." (a single dot) causes KuShellExtension to use the directory of the executable file. ".\" causes KuShellExtension always use the selected directory.
 
 ACTIONS
-    Normal actions is described as a command line, for the usability, some (dynamic) variables are allowed (see % EXPANSION below). Note you may need to use quotes for the strings that contains spaces, but do not use " directly, because it is not allowed in XML, use &quot; instead.
+    Normal actions is described as a command line, for the usability, some (dynamic) variables are allowed (see % EXPANSION below). Note you may need to use quotes for the strings that contains spaces, but do not use " directly, because it is not allowed in XML, use &quot; instead. you may also have problems with & use &amp; instead.
 
 % EXPANSION
     %1 %2 %3 ... %9
